@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:uuid/uuid.dart';
 import '../../providers/emergency_contacts_provider.dart';
 import '../../../../core/models/emergency_contact.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class EmergencyContactsPage extends ConsumerWidget {
   const EmergencyContactsPage({super.key});
@@ -11,80 +13,96 @@ class EmergencyContactsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final contacts = ref.watch(emergencyContactsProvider);
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            const Color(0xFF0A0E21),
-            const Color(0xFF1A1F3A),
-          ],
+    return Scaffold(
+      backgroundColor: AppTheme.backgroundBlack,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 120.0),
+        child: FloatingActionButton.extended(
+          onPressed: () => _showAddContactDialog(context, ref),
+          backgroundColor: AppTheme.neonGreen,
+          foregroundColor: AppTheme.backgroundBlack,
+          icon: const Icon(Icons.person_add_rounded),
+          label: Text(
+            'ADD CONTACT',
+            style: GoogleFonts.outfit(
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.0,
+            ),
+          ),
         ),
       ),
-      child: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.contacts,
-                    color: const Color(0xFF4CAF50),
-                    size: 32,
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
+      body: SafeArea(
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.neonRed.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.emergency_share_outlined,
+                        color: AppTheme.neonRed,
+                        size: 32,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Emergency Contacts',
-                          style: Theme.of(context).textTheme.headlineMedium,
+                          'EMERGENCY',
+                          style: GoogleFonts.outfit(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textPrimary,
+                            letterSpacing: 1.0,
+                          ),
                         ),
                         Text(
-                          'Manage who gets notified',
-                          style: Theme.of(context).textTheme.bodySmall,
+                          'Manage your guardians',
+                          style: GoogleFonts.outfit(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.textTertiary,
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Contacts List
-            Expanded(
-              child: contacts.isEmpty
-                  ? _buildEmptyState(context)
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: contacts.length,
-                      itemBuilder: (context, index) {
-                        return _buildContactCard(
-                          context,
-                          ref,
-                          contacts[index],
-                        );
-                      },
-                    ),
-            ),
-
-            // Add Contact Button
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton.icon(
-                  onPressed: () => _showAddContactDialog(context, ref),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Emergency Contact'),
+                  ],
                 ),
               ),
             ),
+
+            contacts.isEmpty
+                ? SliverFillRemaining(
+                    child: _buildEmptyState(context),
+                  )
+                : SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 8,
+                          ),
+                          child: _buildContactCard(
+                            context,
+                            ref,
+                            contacts[index],
+                          ),
+                        );
+                      },
+                      childCount: contacts.length,
+                    ),
+                  ),
+
+            const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
           ],
         ),
       ),
@@ -96,26 +114,37 @@ class EmergencyContactsPage extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.person_add_outlined,
-            size: 80,
-            color: Colors.white24,
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceDark,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.contact_phone_outlined,
+              size: 64,
+              color: AppTheme.textTertiary.withOpacity(0.5),
+            ),
           ),
           const SizedBox(height: 24),
           Text(
-            'No Emergency Contacts',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.white54,
-                ),
+            'No Contacts Yet',
+            style: GoogleFonts.outfit(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textPrimary,
+            ),
           ),
           const SizedBox(height: 12),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 48.0),
             child: Text(
-              'Add trusted contacts who will be notified if drowsiness is detected',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white38,
-                  ),
+              'Add trusted contacts who can be notified in case of emergency.',
+              style: GoogleFonts.outfit(
+                fontSize: 14,
+                color: AppTheme.textSecondary,
+                height: 1.5,
+              ),
               textAlign: TextAlign.center,
             ),
           ),
@@ -130,15 +159,21 @@ class EmergencyContactsPage extends ConsumerWidget {
     EmergencyContact contact,
   ) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E2746),
-        borderRadius: BorderRadius.circular(20),
+        color: AppTheme.surfaceDark,
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: Colors.white12,
+          color: AppTheme.borderColor,
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,16 +181,21 @@ class EmergencyContactsPage extends ConsumerWidget {
           Row(
             children: [
               Container(
-                width: 56,
-                height: 56,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4CAF50).withOpacity(0.2),
+                  color: AppTheme.neonGreen.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  Icons.person,
-                  color: const Color(0xFF4CAF50),
-                  size: 28,
+                child: Center(
+                  child: Text(
+                    contact.name.isNotEmpty ? contact.name[0].toUpperCase() : '?',
+                    style: GoogleFonts.outfit(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.neonGreen,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
@@ -165,63 +205,74 @@ class EmergencyContactsPage extends ConsumerWidget {
                   children: [
                     Text(
                       contact.name,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                      style: GoogleFonts.outfit(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textPrimary,
+                      ),
                     ),
                     Text(
                       contact.phoneNumber,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white60,
-                          ),
+                      style: GoogleFonts.outfit(
+                        fontSize: 14,
+                        color: AppTheme.textTertiary,
+                      ),
                     ),
                   ],
                 ),
               ),
               IconButton(
                 onPressed: () => _showDeleteConfirmation(context, ref, contact),
-                icon: const Icon(Icons.delete_outline),
-                color: const Color(0xFFEF5350),
+                icon: const Icon(Icons.delete_outline_rounded),
+                color: AppTheme.neonRed,
+                style: IconButton.styleFrom(
+                  backgroundColor: AppTheme.neonRed.withOpacity(0.1),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          const Divider(color: Colors.white12),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildToggleOption(
-                  context,
-                  ref,
-                  contact,
-                  'Auto SMS',
-                  contact.enableAutoSms,
-                  Icons.message_outlined,
-                  (value) {
-                    ref.read(emergencyContactsProvider.notifier).updateContact(
-                          contact.copyWith(enableAutoSms: value),
-                        );
-                  },
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: AppTheme.backgroundBlack,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildToggleOption(
+                    context,
+                    ref,
+                    contact,
+                    'Auto SMS',
+                    contact.enableAutoSms,
+                    Icons.message_rounded,
+                    (value) {
+                      ref.read(emergencyContactsProvider.notifier).updateContact(
+                            contact.copyWith(enableAutoSms: value),
+                          );
+                    },
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildToggleOption(
-                  context,
-                  ref,
-                  contact,
-                  'Auto Call',
-                  contact.enableAutoCall,
-                  Icons.phone_outlined,
-                  (value) {
-                    ref.read(emergencyContactsProvider.notifier).updateContact(
-                          contact.copyWith(enableAutoCall: value),
-                        );
-                  },
+                const SizedBox(width: 4),
+                Expanded(
+                  child: _buildToggleOption(
+                    context,
+                    ref,
+                    contact,
+                    'Auto Call',
+                    contact.enableAutoCall,
+                    Icons.phone_rounded,
+                    (value) {
+                      ref.read(emergencyContactsProvider.notifier).updateContact(
+                            contact.copyWith(enableAutoCall: value),
+                          );
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -237,38 +288,37 @@ class EmergencyContactsPage extends ConsumerWidget {
     IconData icon,
     Function(bool) onChanged,
   ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: value
-            ? const Color(0xFF4CAF50).withOpacity(0.2)
-            : Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 18,
-            color: value ? const Color(0xFF4CAF50) : Colors.white54,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: value ? const Color(0xFF4CAF50) : Colors.white54,
-                    fontWeight: FontWeight.w500,
-                  ),
+    return GestureDetector(
+      onTap: () => onChanged(!value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: value ? AppTheme.surfaceLight : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: value
+              ? Border.all(color: AppTheme.neonGreen.withOpacity(0.5))
+              : Border.all(color: Colors.transparent),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: value ? AppTheme.neonGreen : AppTheme.textTertiary,
             ),
-          ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: const Color(0xFF4CAF50),
-          ),
-        ],
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: GoogleFonts.outfit(
+                fontSize: 13,
+                fontWeight: value ? FontWeight.bold : FontWeight.w500,
+                color: value ? AppTheme.textPrimary : AppTheme.textTertiary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -283,13 +333,18 @@ class EmergencyContactsPage extends ConsumerWidget {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          backgroundColor: const Color(0xFF1E2746),
+          backgroundColor: AppTheme.surfaceDark,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(24),
+            side: const BorderSide(color: AppTheme.borderColor),
           ),
           title: Text(
-            'Add Emergency Contact',
-            style: Theme.of(context).textTheme.headlineSmall,
+            'New Contact',
+            style: GoogleFonts.outfit(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textPrimary,
+            ),
           ),
           content: SingleChildScrollView(
             child: Column(
@@ -297,36 +352,46 @@ class EmergencyContactsPage extends ConsumerWidget {
               children: [
                 TextField(
                   controller: nameController,
-                  decoration: const InputDecoration(
+                  style: GoogleFonts.outfit(color: AppTheme.textPrimary),
+                  decoration: InputDecoration(
                     labelText: 'Name',
-                    prefixIcon: Icon(Icons.person_outline),
+                    prefixIcon: const Icon(Icons.person_outline_rounded),
+                    labelStyle: GoogleFonts.outfit(color: AppTheme.textTertiary),
                   ),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: phoneController,
                   keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
+                  style: GoogleFonts.outfit(color: AppTheme.textPrimary),
+                  decoration: InputDecoration(
                     labelText: 'Phone Number',
-                    prefixIcon: Icon(Icons.phone_outlined),
+                    prefixIcon: const Icon(Icons.phone_outlined),
+                    labelStyle: GoogleFonts.outfit(color: AppTheme.textTertiary),
                   ),
                 ),
                 const SizedBox(height: 24),
                 SwitchListTile(
-                  title: const Text('Enable Auto SMS'),
+                  title: Text(
+                    'Auto SMS',
+                    style: GoogleFonts.outfit(color: AppTheme.textPrimary),
+                  ),
                   value: enableSms,
-                  onChanged: (value) {
-                    setState(() => enableSms = value);
-                  },
-                  activeColor: const Color(0xFF4CAF50),
+                  onChanged: (value) => setState(() => enableSms = value),
+                  activeColor: AppTheme.neonGreen,
+                  activeTrackColor: AppTheme.neonGreen.withOpacity(0.3),
+                  inactiveThumbColor: AppTheme.textTertiary,
                 ),
                 SwitchListTile(
-                  title: const Text('Enable Auto Call'),
+                  title: Text(
+                    'Auto Call',
+                    style: GoogleFonts.outfit(color: AppTheme.textPrimary),
+                  ),
                   value: enableCall,
-                  onChanged: (value) {
-                    setState(() => enableCall = value);
-                  },
-                  activeColor: const Color(0xFF4CAF50),
+                  onChanged: (value) => setState(() => enableCall = value),
+                  activeColor: AppTheme.neonGreen,
+                  activeTrackColor: AppTheme.neonGreen.withOpacity(0.3),
+                  inactiveThumbColor: AppTheme.textTertiary,
                 ),
               ],
             ),
@@ -334,7 +399,13 @@ class EmergencyContactsPage extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(
+                'CANCEL',
+                style: GoogleFonts.outfit(
+                  color: AppTheme.textTertiary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             ElevatedButton(
               onPressed: () {
@@ -353,7 +424,14 @@ class EmergencyContactsPage extends ConsumerWidget {
                   Navigator.pop(context);
                 }
               },
-              child: const Text('Add'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.neonGreen,
+                foregroundColor: AppTheme.backgroundBlack,
+              ),
+              child: Text(
+                'ADD',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
@@ -369,16 +447,36 @@ class EmergencyContactsPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E2746),
+        backgroundColor: AppTheme.surfaceDark,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
+          side: const BorderSide(color: AppTheme.borderColor),
         ),
-        title: const Text('Delete Contact'),
-        content: Text('Are you sure you want to remove ${contact.name}?'),
+        title: Text(
+          'Delete Contact',
+          style: GoogleFonts.outfit(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        content: Text(
+          'Remove ${contact.name} from emergency contacts?',
+          style: GoogleFonts.outfit(
+            color: AppTheme.textSecondary,
+            fontSize: 16,
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(
+              'CANCEL',
+              style: GoogleFonts.outfit(
+                color: AppTheme.textTertiary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -386,9 +484,13 @@ class EmergencyContactsPage extends ConsumerWidget {
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEF5350),
+              backgroundColor: AppTheme.neonRed,
+              foregroundColor: Colors.white,
             ),
-            child: const Text('Delete'),
+            child: Text(
+              'DELETE',
+              style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),

@@ -1,61 +1,68 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class AnalyticsPage extends ConsumerWidget {
   const AnalyticsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            const Color(0xFF0A0E21),
-            const Color(0xFF1A1F3A),
-          ],
-        ),
-      ),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Padding(
+    return Scaffold(
+      backgroundColor: AppTheme.backgroundBlack,
+      body: SafeArea(
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.analytics,
-                      color: const Color(0xFF4CAF50),
-                      size: 32,
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.neonBlue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.analytics_outlined,
+                        color: AppTheme.neonBlue,
+                        size: 32,
+                      ),
                     ),
                     const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Driving Analytics',
-                            style: Theme.of(context).textTheme.headlineMedium,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'ANALYTICS',
+                          style: GoogleFonts.outfit(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textPrimary,
+                            letterSpacing: 1.0,
                           ),
-                          Text(
-                            'Your safety insights',
-                            style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        Text(
+                          'Safety Insights',
+                          style: GoogleFonts.outfit(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.textTertiary,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
+            ),
 
-              // Summary Cards
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+            // Summary Cards
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Row(
                   children: [
                     Expanded(
@@ -64,27 +71,29 @@ class AnalyticsPage extends ConsumerWidget {
                         icon: Icons.timer_outlined,
                         label: 'Total Hours',
                         value: '24h',
-                        color: const Color(0xFF4CAF50),
+                        color: AppTheme.neonGreen,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: _buildSummaryCard(
                         context,
-                        icon: Icons.warning_amber_outlined,
+                        icon: Icons.warning_amber_rounded,
                         label: 'Alerts',
                         value: '12',
-                        color: const Color(0xFFFFA726),
+                        color: AppTheme.neonAmber,
                       ),
                     ),
                   ],
                 ),
               ),
+            ),
 
-              const SizedBox(height: 12),
+            const SliverPadding(padding: EdgeInsets.only(top: 16)),
 
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Row(
                   children: [
                     Expanded(
@@ -93,40 +102,48 @@ class AnalyticsPage extends ConsumerWidget {
                         icon: Icons.drive_eta_outlined,
                         label: 'Sessions',
                         value: '8',
-                        color: const Color(0xFF42A5F5),
+                        color: AppTheme.neonBlue,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: _buildSummaryCard(
                         context,
                         icon: Icons.emoji_events_outlined,
                         label: 'Safety Score',
                         value: '92%',
-                        color: const Color(0xFF9C27B0),
+                        color: AppTheme.neonPurple,
                       ),
                     ),
                   ],
                 ),
               ),
+            ),
 
-              const SizedBox(height: 32),
+            const SliverPadding(padding: EdgeInsets.only(top: 32)),
 
-              // Weekly Chart
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+            // Weekly Chart
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E2746),
-                    borderRadius: BorderRadius.circular(20),
+                    color: AppTheme.surfaceDark,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: AppTheme.borderColor),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Weekly Alert Trend',
-                        style: Theme.of(context).textTheme.titleLarge,
+                        'WEEKLY TREND',
+                        style: GoogleFonts.outfit(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textTertiary,
+                          letterSpacing: 1.5,
+                        ),
                       ),
                       const SizedBox(height: 24),
                       SizedBox(
@@ -136,9 +153,10 @@ class AnalyticsPage extends ConsumerWidget {
                             gridData: FlGridData(
                               show: true,
                               drawVerticalLine: false,
+                              horizontalInterval: 1,
                               getDrawingHorizontalLine: (value) {
                                 return FlLine(
-                                  color: Colors.white12,
+                                  color: AppTheme.surfaceLight,
                                   strokeWidth: 1,
                                 );
                               },
@@ -150,15 +168,26 @@ class AnalyticsPage extends ConsumerWidget {
                               topTitles: AxisTitles(
                                 sideTitles: SideTitles(showTitles: false),
                               ),
+                              leftTitles: AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
                               bottomTitles: AxisTitles(
                                 sideTitles: SideTitles(
                                   showTitles: true,
+                                  interval: 1,
                                   getTitlesWidget: (value, meta) {
-                                    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                                    if (value.toInt() < days.length) {
-                                      return Text(
-                                        days[value.toInt()],
-                                        style: TextStyle(color: Colors.white54, fontSize: 12),
+                                    const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+                                    if (value.toInt() >= 0 && value.toInt() < days.length) {
+                                      return Padding(
+                                        padding: const EdgeInsets.only(top: 8.0),
+                                        child: Text(
+                                          days[value.toInt()],
+                                          style: GoogleFonts.outfit(
+                                            color: AppTheme.textTertiary,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
                                       );
                                     }
                                     return const Text('');
@@ -179,15 +208,36 @@ class AnalyticsPage extends ConsumerWidget {
                                   FlSpot(6, 2),
                                 ],
                                 isCurved: true,
-                                color: const Color(0xFF4CAF50),
+                                color: AppTheme.neonGreen,
                                 barWidth: 3,
-                                dotData: FlDotData(show: true),
+                                dotData: FlDotData(
+                                  show: true,
+                                  getDotPainter: (spot, percent, barData, index) {
+                                    return FlDotCirclePainter(
+                                      radius: 4,
+                                      color: AppTheme.backgroundBlack,
+                                      strokeWidth: 2,
+                                      strokeColor: AppTheme.neonGreen,
+                                    );
+                                  },
+                                ),
                                 belowBarData: BarAreaData(
                                   show: true,
-                                  color: const Color(0xFF4CAF50).withOpacity(0.2),
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      AppTheme.neonGreen.withOpacity(0.2),
+                                      AppTheme.neonGreen.withOpacity(0.0),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ],
+                            minX: 0,
+                            maxX: 6,
+                            minY: 0,
+                            maxY: 5,
                           ),
                         ),
                       ),
@@ -195,33 +245,42 @@ class AnalyticsPage extends ConsumerWidget {
                   ),
                 ),
               ),
+            ),
 
-              const SizedBox(height: 24),
+            const SliverPadding(padding: EdgeInsets.only(top: 32)),
 
-              // Recent Sessions
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+            // Recent Sessions
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
-                  'Recent Sessions',
-                  style: Theme.of(context).textTheme.titleLarge,
+                  'RECENT SESSIONS',
+                  style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textTertiary,
+                    letterSpacing: 1.5,
+                  ),
                 ),
               ),
+            ),
 
-              const SizedBox(height: 16),
+            const SliverPadding(padding: EdgeInsets.only(top: 16)),
 
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: 5,
-                itemBuilder: (context, index) {
-                  return _buildSessionCard(context, index);
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+                    child: _buildSessionCard(context, index),
+                  );
                 },
+                childCount: 5,
               ),
+            ),
 
-              const SizedBox(height: 24),
-            ],
-          ),
+            const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
+          ],
         ),
       ),
     );
@@ -237,24 +296,29 @@ class AnalyticsPage extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E2746),
-        borderRadius: BorderRadius.circular(20),
+        color: AppTheme.surfaceDark,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, color: color, size: 28),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Text(
             value,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
+            style: GoogleFonts.outfit(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textPrimary,
+            ),
           ),
           Text(
             label,
-            style: Theme.of(context).textTheme.bodySmall,
+            style: GoogleFonts.outfit(
+              fontSize: 14,
+              color: AppTheme.textTertiary,
+            ),
           ),
         ],
       ),
@@ -266,12 +330,15 @@ class AnalyticsPage extends ConsumerWidget {
     final alerts = [2, 0, 1, 5, 3];
     final dates = ['Today', 'Yesterday', '2 days ago', '3 days ago', '4 days ago'];
 
+    final isCleanSession = alerts[index] == 0;
+    final statusColor = isCleanSession ? AppTheme.neonGreen : AppTheme.neonAmber;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E2746),
-        borderRadius: BorderRadius.circular(16),
+        color: AppTheme.surfaceDark,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.borderColor),
       ),
       child: Row(
         children: [
@@ -279,16 +346,12 @@ class AnalyticsPage extends ConsumerWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: alerts[index] == 0
-                  ? const Color(0xFF4CAF50).withOpacity(0.2)
-                  : const Color(0xFFFFA726).withOpacity(0.2),
+              color: statusColor.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
-              Icons.drive_eta,
-              color: alerts[index] == 0
-                  ? const Color(0xFF4CAF50)
-                  : const Color(0xFFFFA726),
+              isCleanSession ? Icons.check_circle_outline : Icons.warning_amber_rounded,
+              color: statusColor,
             ),
           ),
           const SizedBox(width: 16),
@@ -298,21 +361,49 @@ class AnalyticsPage extends ConsumerWidget {
               children: [
                 Text(
                   dates[index],
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                  style: GoogleFonts.outfit(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
                 ),
-                Text(
-                  '${times[index]} • ${alerts[index]} alerts',
-                  style: Theme.of(context).textTheme.bodySmall,
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Text(
+                      times[index],
+                      style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      width: 4,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppTheme.textTertiary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${alerts[index]} alerts',
+                      style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        color: alerts[index] > 0 ? AppTheme.neonAmber : AppTheme.textSecondary,
+                        fontWeight: alerts[index] > 0 ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
           Icon(
-            Icons.arrow_forward_ios,
+            Icons.arrow_forward_ios_rounded,
             size: 16,
-            color: Colors.white38,
+            color: AppTheme.textTertiary,
           ),
         ],
       ),

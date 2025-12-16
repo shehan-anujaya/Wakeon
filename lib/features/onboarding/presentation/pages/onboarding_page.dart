@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../home/presentation/pages/home_page.dart';
+import '../../../../core/theme/app_theme.dart';
 
 // Onboarding state notifier
 class OnboardingNotifier extends StateNotifier<bool> {
@@ -31,41 +33,35 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   final List<OnboardingItem> _pages = [
     OnboardingItem(
       icon: Icons.visibility_outlined,
-      title: 'Stay Alert, Drive Safe',
-      description: 'Wakeon monitors your eyes in real-time to detect signs of drowsiness and fatigue while driving.',
-      gradient: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
+      title: 'Stay Alert',
+      description: 'Advanced real-time eye monitoring to detect fatigue before it becomes dangerous.',
+      color: AppTheme.neonGreen,
     ),
     OnboardingItem(
       icon: Icons.notifications_active_outlined,
       title: 'Instant Alerts',
-      description: 'Get immediate audio, visual, and vibration alerts when drowsiness is detected to wake you up.',
-      gradient: [Color(0xFFFFA726), Color(0xFFF57C00)],
+      description: 'Receive immediate audio and visual warnings when drowsiness signs are detected.',
+      color: AppTheme.neonAmber,
     ),
     OnboardingItem(
       icon: Icons.shield_outlined,
-      title: 'Emergency Protection',
-      description: 'Automatic emergency contact notifications with your location if you don\'t respond to alerts.',
-      gradient: [Color(0xFFEF5350), Color(0xFFC62828)],
+      title: 'Drive Safe',
+      description: 'Your safety guardian on the road. Automated emergency contacts if you stay unresponsive.',
+      color: AppTheme.neonRed,
     ),
     OnboardingItem(
       icon: Icons.analytics_outlined,
-      title: 'Track Your Safety',
-      description: 'View detailed analytics of your driving sessions and fatigue patterns to drive smarter.',
-      gradient: [Color(0xFF42A5F5), Color(0xFF1976D2)],
-    ),
-    OnboardingItem(
-      icon: Icons.lock_outlined,
-      title: 'Your Privacy First',
-      description: 'All detection happens on your device. No video is stored or transmitted. You\'re in control.',
-      gradient: [Color(0xFF9C27B0), Color(0xFF6A1B9A)],
+      title: 'Track Stats',
+      description: 'Analyze your driving patterns and alertness levels with detailed session insights.',
+      color: AppTheme.neonBlue,
     ),
   ];
 
   void _nextPage() {
     if (_currentPage < _pages.length - 1) {
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.fastOutSlowIn,
       );
     } else {
       _completeOnboarding();
@@ -87,93 +83,133 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final activeColor = _pages[_currentPage].color;
+
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color(0xFF0A0E21),
-              const Color(0xFF1A1F3A),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Skip button
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Align(
-                  alignment: Alignment.topRight,
-                  child: TextButton(
+      backgroundColor: AppTheme.backgroundBlack,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header / Skip
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: activeColor,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: activeColor.withOpacity(0.5),
+                              blurRadius: 10,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'WAKEON',
+                        style: GoogleFonts.outfit(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textPrimary,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  TextButton(
                     onPressed: _skipOnboarding,
-                    child: Text(
-                      'Skip',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              // PageView
-              Expanded(
-                child: PageView.builder(
-                  controller: _pageController,
-                  onPageChanged: (index) {
-                    setState(() {
-                      _currentPage = index;
-                    });
-                  },
-                  itemCount: _pages.length,
-                  itemBuilder: (context, index) {
-                    return _buildPage(_pages[index]);
-                  },
-                ),
-              ),
-
-              // Page indicators
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    _pages.length,
-                    (index) => _buildIndicator(index == _currentPage),
-                  ),
-                ),
-              ),
-
-              // Next button
-              Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: _nextPage,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _pages[_currentPage].gradient.first,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppTheme.textTertiary,
                     ),
                     child: Text(
-                      _currentPage == _pages.length - 1 ? 'Get Started' : 'Next',
-                      style: const TextStyle(
-                        fontSize: 18,
+                      'SKIP',
+                      style: GoogleFonts.outfit(
                         fontWeight: FontWeight.w600,
+                        letterSpacing: 1.0,
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+
+            // Main Content
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentPage = index;
+                  });
+                },
+                itemCount: _pages.length,
+                itemBuilder: (context, index) {
+                  return _buildPage(_pages[index]);
+                },
+              ),
+            ),
+
+            // Controls
+            Padding(
+              padding: const EdgeInsets.fromLTRB(32, 0, 32, 48),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Indicators
+                  Row(
+                    children: List.generate(
+                      _pages.length,
+                      (index) => _buildIndicator(index == _currentPage, activeColor),
+                    ),
+                  ),
+
+                  // Next/Start Button
+                  GestureDetector(
+                    onTap: _nextPage,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: activeColor,
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: activeColor.withOpacity(0.3),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _currentPage == _pages.length - 1 ? 'START' : 'NEXT',
+                            style: GoogleFonts.outfit(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.black,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.arrow_forward_rounded, color: Colors.black, size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -184,61 +220,68 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       padding: const EdgeInsets.symmetric(horizontal: 32.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 160,
-            height: 160,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: item.gradient,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: item.gradient.first.withOpacity(0.4),
-                  blurRadius: 30,
-                  spreadRadius: 5,
+          // Icon Container
+          Center(
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: item.color.withOpacity(0.1),
+                border: Border.all(
+                  color: item.color.withOpacity(0.2),
+                  width: 2,
                 ),
-              ],
-            ),
-            child: Icon(
-              item.icon,
-              size: 80,
-              color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: item.color.withOpacity(0.1),
+                    blurRadius: 50,
+                    spreadRadius: 10,
+                  ),
+                ],
+              ),
+              child: Icon(
+                item.icon,
+                size: 80,
+                color: item.color,
+              ),
             ),
           ),
-          const SizedBox(height: 48),
+          const SizedBox(height: 60),
+          
           Text(
             item.title,
-            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-            textAlign: TextAlign.center,
+            style: GoogleFonts.outfit(
+              fontSize: 40,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textPrimary,
+              height: 1.1,
+            ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           Text(
             item.description,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontSize: 16,
-                  height: 1.6,
-                ),
-            textAlign: TextAlign.center,
+            style: GoogleFonts.outfit(
+              fontSize: 16,
+              color: AppTheme.textSecondary,
+              height: 1.6,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildIndicator(bool isActive) {
+  Widget _buildIndicator(bool isActive, Color color) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      width: isActive ? 24 : 8,
+      margin: const EdgeInsets.only(right: 8),
+      width: isActive ? 32 : 8,
       height: 8,
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF4CAF50) : Colors.white30,
+        color: isActive ? color : AppTheme.surfaceLight,
         borderRadius: BorderRadius.circular(4),
       ),
     );
@@ -255,12 +298,12 @@ class OnboardingItem {
   final IconData icon;
   final String title;
   final String description;
-  final List<Color> gradient;
+  final Color color;
 
   OnboardingItem({
     required this.icon,
     required this.title,
     required this.description,
-    required this.gradient,
+    required this.color,
   });
 }
