@@ -7,6 +7,7 @@ import '../../providers/driving_session_provider.dart';
 import '../../../emergency_contacts/presentation/pages/emergency_contacts_page.dart';
 import '../../../analytics/presentation/pages/analytics_page.dart';
 import '../../../settings/presentation/pages/settings_page.dart';
+import '../../../settings/providers/settings_provider.dart';
 import '../../../../core/services/drowsiness_detection_service.dart';
 import '../../../../core/theme/app_theme.dart';
 
@@ -20,18 +21,19 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = [
-    const DrivingScreen(),
-    const EmergencyContactsPage(),
-    const AnalyticsPage(),
-    const SettingsPage(),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      body: _pages[_currentIndex],
+      body: IndexedStack(
+        index: _currentIndex,
+        children: const [
+          DrivingScreen(),
+          EmergencyContactsPage(),
+          AnalyticsPage(),
+          SettingsPage(),
+        ],
+      ),
       bottomNavigationBar: _buildModernNavBar(),
     );
   }
@@ -81,7 +83,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               children: [
                 _buildNavItem(
                   index: 0,
-                  icon: Icons.emergency_rounded,
+                  icon: Icons.drive_eta_rounded,
                   label: 'Drive',
                   accentColor: AppTheme.neonGreen,
                 ),
@@ -233,12 +235,16 @@ class DrivingScreen extends ConsumerStatefulWidget {
   ConsumerState<DrivingScreen> createState() => _DrivingScreenState();
 }
 
-class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProviderStateMixin {
+class _DrivingScreenState extends ConsumerState<DrivingScreen> 
+    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   DetectionStatus _currentStatus = DetectionStatus.alert;
   String _statusMessage = 'SYSTEM READY';
   bool _isDriving = false;
   late AnimationController _rippleController;
   late AnimationController _pulseController;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -263,6 +269,8 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
+    
     final session = ref.watch(drivingSessionProvider);
     
     // Use session's detection status if available
@@ -275,8 +283,10 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
       ),
       child: SafeArea(
         bottom: false,
-        child: Column(
+        child: Stack(
           children: [
+            Column(
+              children: [
             // Header
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
@@ -527,6 +537,54 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
             const SizedBox(height: 140),
           ],
         ),
+        
+        // DEBUG: Test buttons overlay (only show when driving)
+        if (_isDriving && session != null)
+          Positioned(
+            left: 16,
+            bottom: 160,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildDebugButton(
+                  'Test Audio',
+                  Icons.volume_up,
+                  Colors.blue,
+                  () async {
+                    final alertService = ref.read(alertServiceProvider);
+                    final settings = ref.read(settingsProvider);
+                    await alertService.triggerAlert(
+                      settings: settings,
+                      message: 'Testing audio alert system',
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+                _buildDebugButton(
+                  'Test Drowsy',
+                  Icons.bedtime,
+                  AppTheme.neonRed,
+                  () => ref.read(drivingSessionProvider.notifier).debugTriggerDrowsiness(),
+                ),
+                const SizedBox(height: 8),
+                _buildDebugButton(
+                  'Test Fatigue',
+                  Icons.visibility_off,
+                  AppTheme.neonAmber,
+                  () => ref.read(drivingSessionProvider.notifier).debugTriggerFatigue(),
+                ),
+                const SizedBox(height: 8),
+                _buildDebugButton(
+                  'Reset',
+                  Icons.refresh,
+                  AppTheme.neonGreen,
+                  () => ref.read(drivingSessionProvider.notifier).debugResetState(),
+                ),
+              ],
+            ),
+          ),
+      ],
+    ),
       ),
     );
   }
@@ -578,6 +636,7 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
     // Check if face is detected properly
     final detectionStatus = session?.currentDetectionStatus;
     final isFaceDetected = session?.currentStatusMessage != 'No face detected';
+    final isFaceLockedIn = session?.faceLockedIn == true;
 
     return Stack(
       fit: StackFit.expand,
@@ -596,12 +655,12 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
           ),
         ),
         
-        // Face Positioning Guide Overlay
-        if (!isFaceDetected)
+        // Face Positioning Guide Overlay (only show when not locked in)
+        if (!isFaceLockedIn)
           _buildFacePositioningGuide(),
         
-        // Face Detected Success Indicator (appears briefly when face is found)
-        if (isFaceDetected && detectionStatus == DetectionStatus.alert)
+        // Face Locked In Success Indicator
+        if (isFaceLockedIn)
           Positioned(
             top: 20,
             left: 0,
@@ -630,7 +689,7 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'FACE DETECTED',
+                      'FACE LOCKED IN',
                       style: GoogleFonts.outfit(
                         fontSize: 11,
                         fontWeight: FontWeight.w900,
@@ -691,12 +750,12 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
                 shape: BoxShape.rectangle,
                 borderRadius: BorderRadius.circular(100),
                 border: Border.all(
-                  color: AppTheme.neonAmber,
+                  color: Colors.blue,
                   width: 3,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.neonAmber.withOpacity(0.4),
+                    color: Colors.blue.withOpacity(0.5),
                     blurRadius: 20,
                     spreadRadius: 2,
                   ),
@@ -714,7 +773,7 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
               children: [
                 Icon(
                   Icons.face_outlined,
-                  color: AppTheme.neonAmber,
+                  color: Colors.blue,
                   size: 32,
                 ),
                 const SizedBox(height: 8),
@@ -723,7 +782,7 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
                   style: GoogleFonts.outfit(
                     fontSize: 12,
                     fontWeight: FontWeight.w900,
-                    color: AppTheme.neonAmber,
+                    color: Colors.blue,
                     letterSpacing: 2.0,
                   ),
                   textAlign: TextAlign.center,
@@ -759,16 +818,16 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
       decoration: BoxDecoration(
         border: Border(
           top: (isTopLeft || isTopRight)
-              ? BorderSide(color: AppTheme.neonAmber, width: 3)
+              ? BorderSide(color: Colors.blue, width: 3)
               : BorderSide.none,
           bottom: (isBottomLeft || isBottomRight)
-              ? BorderSide(color: AppTheme.neonAmber, width: 3)
+              ? BorderSide(color: Colors.blue, width: 3)
               : BorderSide.none,
           left: (isTopLeft || isBottomLeft)
-              ? BorderSide(color: AppTheme.neonAmber, width: 3)
+              ? BorderSide(color: Colors.blue, width: 3)
               : BorderSide.none,
           right: (isTopRight || isBottomRight)
-              ? BorderSide(color: AppTheme.neonAmber, width: 3)
+              ? BorderSide(color: Colors.blue, width: 3)
               : BorderSide.none,
         ),
       ),
@@ -1092,5 +1151,42 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
       case DetectionStatus.drowsy:
         return Icons.warning_outlined;
     }
+  }
+
+  Widget _buildDebugButton(String label, IconData icon, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color, width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.3),
+              blurRadius: 8,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: GoogleFonts.outfit(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: color,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

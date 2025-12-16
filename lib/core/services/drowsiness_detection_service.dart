@@ -21,11 +21,14 @@ class DrowsinessDetectionService {
   );
 
   DateTime? _eyesClosedStartTime;
+  DateTime? _headDownStartTime;
   int _blinkCount = 0;
   DateTime _lastBlinkResetTime = DateTime.now();
   
   double _eyeClosureThreshold = 2.5; // seconds
+  double _headDownThreshold = 1.5; // seconds for head down detection
   bool _isProcessing = false;
+  bool _faceLockedIn = false;
 
   void updateThreshold(double threshold) {
     _eyeClosureThreshold = threshold;
@@ -49,14 +52,81 @@ class DrowsinessDetectionService {
       
       if (faces.isEmpty) {
         _resetDetection();
+        _faceLockedIn = false;
         _isProcessing = false;
         return DetectionResult(
           status: DetectionStatus.alert,
           message: 'No face detected',
+          faceDetected: false,
         );
       }
 
       final face = faces.first;
+      
+      // Check if face is properly positioned (center of frame)
+      final faceRect = face.boundingBox;
+      final imageCenterX = inputImage.metadata!.size.width / 2;
+      final imageCenterY = inputImage.metadata!.size.height / 2;
+      final faceCenterX = faceRect.left + (faceRect.width / 2);
+      final faceCenterY = faceRect.top + (faceRect.height / 2);
+      
+      final xOffset = (faceCenterX - imageCenterX).abs();
+      final yOffset = (faceCenterY - imageCenterY).abs();
+      
+      // Face is well positioned if within 30% of center
+      final isWellPositioned = xOffset < inputImage.metadata!.size.width * 0.3 && 
+                               yOffset < inputImage.metadata!.size.height * 0.3 &&
+                               faceRect.width > 100; // Minimum face size
+      
+      if (!_faceLockedIn && isWellPositioned) {
+        _faceLockedIn = true;
+      }
+      
+      // Get head pose angles
+      final headEulerAngleX = face.headEulerAngleX ?? 0.0; // Pitch (up/down)
+      final headEulerAngleY = face.headEulerAngleY ?? 0.0; // Yaw (left/right)
+      final headEulerAngleZ = face.headEulerAngleZ ?? 0.0; // Roll (tilt)
+      
+      // Detect head down: pitch angle > 15 degrees means head is tilted down
+      final isHeadDown = headEulerAngleX > 15.0;
+      
+      // Check for head down drowsiness (more reliable than eye closure)
+      if (_faceLockedIn && isHeadDown) {
+        _headDownStartTime ??= DateTime.now();
+        
+        final headDownDuration = DateTime.now().difference(_headDownStartTime!);
+        
+        if (headDownDuration.inMilliseconds > _headDownThreshold * 1000) {
+          _isProcessing = false;
+          return DetectionResult(
+            status: DetectionStatus.drowsy,
+            message: 'Head down detected!',
+            eyeClosureDuration: headDownDuration.inMilliseconds / 1000,
+            level: DrowsinessLevel.severe,
+            faceDetected: true,
+            headPose: HeadPose(
+              pitch: headEulerAngleX,
+              yaw: headEulerAngleY,
+              roll: headEulerAngleZ,
+            ),
+          );
+        } else if (headDownDuration.inMilliseconds > 800) {
+          _isProcessing = false;
+          return DetectionResult(
+            status: DetectionStatus.slight,
+            message: 'Head tilting down...',
+            eyeClosureDuration: headDownDuration.inMilliseconds / 1000,
+            faceDetected: true,
+            headPose: HeadPose(
+              pitch: headEulerAngleX,
+              yaw: headEulerAngleY,
+              roll: headEulerAngleZ,
+            ),
+          );
+        }
+      } else {
+        _headDownStartTime = null;
+      }
       
       // Check eye states
       final leftEyeOpen = face.leftEyeOpenProbability ?? 1.0;
@@ -101,8 +171,14 @@ class DrowsinessDetectionService {
       _isProcessing = false;
       return DetectionResult(
         status: DetectionStatus.alert,
-        message: 'Driver alert',
+        message: _faceLockedIn ? 'Driver alert' : 'Position your face',
         blinkCount: _blinkCount,
+        faceDetected: true,
+        headPose: HeadPose(
+          pitch: headEulerAngleX,
+          yaw: headEulerAngleY,
+          roll: headEulerAngleZ,
+        ),
       );
       
     } catch (e) {
@@ -149,11 +225,24 @@ class DrowsinessDetectionService {
 
   void _resetDetection() {
     _eyesClosedStartTime = null;
+    _headDownStartTime = null;
   }
 
   void dispose() {
     _faceDetector.close();
   }
+}
+
+class HeadPose {
+  final double pitch; // Up/down tilt
+  final double yaw;   // Left/right turn
+  final double roll;  // Side tilt
+
+  HeadPose({
+    required this.pitch,
+    required this.yaw,
+    required this.roll,
+  });
 }
 
 class DetectionResult {
@@ -162,6 +251,8 @@ class DetectionResult {
   final double? eyeClosureDuration;
   final DrowsinessLevel? level;
   final int? blinkCount;
+  final bool? faceDetected;
+  final HeadPose? headPose;
 
   DetectionResult({
     required this.status,
@@ -169,5 +260,7 @@ class DetectionResult {
     this.eyeClosureDuration,
     this.level,
     this.blinkCount,
+    this.faceDetected,
+    this.headPose,
   });
 }

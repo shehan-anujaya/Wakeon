@@ -30,6 +30,7 @@ class DrivingSession extends Equatable {
   // Not persisted - only for UI state
   final DetectionStatus? currentDetectionStatus;
   final String? currentStatusMessage;
+  final bool? faceLockedIn;
 
   const DrivingSession({
     required this.id,
@@ -41,6 +42,7 @@ class DrivingSession extends Equatable {
     this.emergencyTriggered = false,
     this.currentDetectionStatus,
     this.currentStatusMessage,
+    this.faceLockedIn,
   });
 
   DrivingSession copyWith({
@@ -53,6 +55,7 @@ class DrivingSession extends Equatable {
     bool? emergencyTriggered,
     DetectionStatus? currentDetectionStatus,
     String? currentStatusMessage,
+    bool? faceLockedIn,
   }) {
     return DrivingSession(
       id: id ?? this.id,
@@ -64,6 +67,7 @@ class DrivingSession extends Equatable {
       emergencyTriggered: emergencyTriggered ?? this.emergencyTriggered,
       currentDetectionStatus: currentDetectionStatus ?? this.currentDetectionStatus,
       currentStatusMessage: currentStatusMessage ?? this.currentStatusMessage,
+      faceLockedIn: faceLockedIn ?? this.faceLockedIn,
     );
   }
 
@@ -89,5 +93,6 @@ class DrivingSession extends Equatable {
         emergencyTriggered,
         currentDetectionStatus,
         currentStatusMessage,
+        faceLockedIn,
       ];
 }

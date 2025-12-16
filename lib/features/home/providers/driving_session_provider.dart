@@ -86,6 +86,7 @@ class DrivingSessionNotifier extends StateNotifier<DrivingSession?> {
     state = state!.copyWith(
       currentDetectionStatus: result.status,
       currentStatusMessage: result.message,
+      faceLockedIn: result.faceDetected == true && result.message == 'Driver alert',
     );
 
     if (result.status == DetectionStatus.drowsy) {
@@ -167,5 +168,49 @@ class DrivingSessionNotifier extends StateNotifier<DrivingSession?> {
     
     final alertService = _ref.read(alertServiceProvider);
     alertService.stopAlert();
+  }
+
+  // DEBUG: Simulate drowsiness detection
+  Future<void> debugTriggerDrowsiness() async {
+    if (state == null) return;
+
+    // Update visual status to drowsy
+    state = state!.copyWith(
+      currentDetectionStatus: DetectionStatus.drowsy,
+      currentStatusMessage: 'DROWSINESS DETECTED',
+    );
+
+    // Create a mock drowsiness result
+    final mockResult = DetectionResult(
+      status: DetectionStatus.drowsy,
+      message: 'DROWSINESS DETECTED',
+      eyeClosureDuration: 3.0,
+      level: DrowsinessLevel.severe,
+    );
+
+    // Trigger the full alert system
+    await _handleDrowsinessDetected(mockResult);
+  }
+
+  // DEBUG: Simulate slight fatigue
+  void debugTriggerFatigue() {
+    if (state == null) return;
+
+    state = state!.copyWith(
+      currentDetectionStatus: DetectionStatus.slight,
+      currentStatusMessage: 'SLIGHT FATIGUE',
+    );
+  }
+
+  // DEBUG: Reset to alert state
+  void debugResetState() {
+    if (state == null) return;
+
+    state = state!.copyWith(
+      currentDetectionStatus: DetectionStatus.alert,
+      currentStatusMessage: 'ALERT',
+    );
+
+    dismissAlert();
   }
 }
