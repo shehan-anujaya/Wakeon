@@ -82,6 +82,12 @@ class DrivingSessionNotifier extends StateNotifier<DrivingSession?> {
     
     if (result == null) return;
 
+    // Update current detection status in real-time
+    state = state!.copyWith(
+      currentDetectionStatus: result.status,
+      currentStatusMessage: result.message,
+    );
+
     if (result.status == DetectionStatus.drowsy) {
       await _handleDrowsinessDetected(result);
     } else if (result.status == DetectionStatus.slight) {

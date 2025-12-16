@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:hive/hive.dart';
+import '../services/drowsiness_detection_service.dart';
 
 part 'driving_session.g.dart';
 
@@ -25,6 +26,10 @@ class DrivingSession extends Equatable {
   
   @HiveField(6)
   final bool emergencyTriggered;
+  
+  // Not persisted - only for UI state
+  final DetectionStatus? currentDetectionStatus;
+  final String? currentStatusMessage;
 
   const DrivingSession({
     required this.id,
@@ -34,6 +39,8 @@ class DrivingSession extends Equatable {
     this.duration = Duration.zero,
     this.eventIds = const [],
     this.emergencyTriggered = false,
+    this.currentDetectionStatus,
+    this.currentStatusMessage,
   });
 
   DrivingSession copyWith({
@@ -44,6 +51,8 @@ class DrivingSession extends Equatable {
     Duration? duration,
     List<String>? eventIds,
     bool? emergencyTriggered,
+    DetectionStatus? currentDetectionStatus,
+    String? currentStatusMessage,
   }) {
     return DrivingSession(
       id: id ?? this.id,
@@ -53,6 +62,8 @@ class DrivingSession extends Equatable {
       duration: duration ?? this.duration,
       eventIds: eventIds ?? this.eventIds,
       emergencyTriggered: emergencyTriggered ?? this.emergencyTriggered,
+      currentDetectionStatus: currentDetectionStatus ?? this.currentDetectionStatus,
+      currentStatusMessage: currentStatusMessage ?? this.currentStatusMessage,
     );
   }
 
@@ -76,5 +87,7 @@ class DrivingSession extends Equatable {
         duration,
         eventIds,
         emergencyTriggered,
+        currentDetectionStatus,
+        currentStatusMessage,
       ];
 }

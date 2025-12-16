@@ -264,6 +264,10 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(drivingSessionProvider);
+    
+    // Use session's detection status if available
+    final detectionStatus = session?.currentDetectionStatus ?? DetectionStatus.alert;
+    final statusMessage = session?.currentStatusMessage ?? 'SYSTEM READY';
 
     return Container(
       decoration: const BoxDecoration(
@@ -357,88 +361,154 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
 
             const SizedBox(height: 40),
 
-            // Main Dashboard Circle with Ripples - using ClipRect with no clipping to allow ripples to overflow
+            // Main Dashboard Circle with Ripples
             Expanded(
-              child: Center(
-                child: SizedBox(
-                  width: 320,
-                  height: 320,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    alignment: Alignment.center,
-                    children: [
-                      // Animated Ripples (only when not driving)
-                      if (!_isDriving) ...[
-                        _buildRipple(0.0),
-                        _buildRipple(0.33),
-                        _buildRipple(0.66),
-                      ],
-                      
-                      // Outer Glow
-                      AnimatedBuilder(
-                        animation: _pulseController,
-                        builder: (context, child) {
-                          return Container(
-                            width: 280 + (_pulseController.value * 20),
-                            height: 280 + (_pulseController.value * 20),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: _getStatusColor().withOpacity(0.15 + (_pulseController.value * 0.1)),
-                                  blurRadius: 80 + (_pulseController.value * 40),
-                                  spreadRadius: 10,
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                      
-                      // Progress/Status Ring
-                      SizedBox(
-                        width: 290,
-                        height: 290,
-                        child: CircularProgressIndicator(
-                          value: 1.0,
-                          strokeWidth: 3,
-                          valueColor: AlwaysStoppedAnimation<Color>(_getStatusColor().withOpacity(0.4)),
-                        ),
-                      ),
-                      
-                      // Inner Camera/Status Container
-                      Container(
-                        width: 250,
-                        height: 250,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(
-                            colors: [
-                              AppTheme.surfaceDark,
-                              AppTheme.backgroundBlack,
-                            ],
-                          ),
-                          border: Border.all(
-                            color: _getStatusColor().withOpacity(0.6),
-                            width: 3,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.6),
-                              blurRadius: 40,
-                              offset: const Offset(0, 15),
-                            ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return Center(
+                    child: SizedBox(
+                      width: 320,
+                      height: 320,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        alignment: Alignment.center,
+                        children: [
+                          // Animated Ripples (only when not driving)
+                          if (!_isDriving) ...[
+                            _buildRipple(0.0),
+                            _buildRipple(0.33),
+                            _buildRipple(0.66),
                           ],
-                        ),
-                        child: ClipOval(
-                          child: _isDriving 
-                            ? _buildCameraPreview() 
-                            : _buildReadyState(),
-                        ),
+                          
+                          // Outer Glow
+                          AnimatedBuilder(
+                            animation: _pulseController,
+                            builder: (context, child) {
+                              final statusColor = _getColorForStatus(detectionStatus);
+                              return Container(
+                                width: 280 + (_pulseController.value * 20),
+                                height: 280 + (_pulseController.value * 20),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: statusColor.withOpacity(0.15 + (_pulseController.value * 0.1)),
+                                      blurRadius: 80 + (_pulseController.value * 40),
+                                      spreadRadius: 10,
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                          
+                          // Progress/Status Ring
+                          const SizedBox(
+                            width: 290,
+                            height: 290,
+                            child: SizedBox.shrink(),
+                          ),
+                          
+                          // Animated Ring
+                          SizedBox(
+                            width: 290,
+                            height: 290,
+                            child: CircularProgressIndicator(
+                              value: 1.0,
+                              strokeWidth: 3,
+                              valueColor: AlwaysStoppedAnimation<Color>(_getColorForStatus(detectionStatus).withOpacity(0.4)),
+                            ),
+                          ),
+                          
+                          // Inner Camera/Status Container - Fixed position
+                          Positioned(
+                            top: 35,
+                            left: 35,
+                            child: Container(
+                              width: 250,
+                              height: 250,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: const RadialGradient(
+                                  colors: [
+                                    AppTheme.surfaceDark,
+                                    AppTheme.backgroundBlack,
+                                  ],
+                                ),
+                                border: Border.all(
+                                  color: _getColorForStatus(detectionStatus).withOpacity(0.6),
+                                  width: 3,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.6),
+                                    blurRadius: 40,
+                                    offset: const Offset(0, 15),
+                                  ),
+                                ],
+                              ),
+                              child: ClipOval(
+                                child: _isDriving 
+                                  ? _buildCameraPreview() 
+                                  : _buildReadyState(),
+                              ),
+                            ),
+                          ),
+                          
+                          // Warning Status Overlay (only when drowsy or slight)
+                          if (_isDriving && detectionStatus != DetectionStatus.alert)
+                            Positioned(
+                              bottom: 25,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      _getColorForStatus(detectionStatus).withOpacity(0.95),
+                                      _getColorForStatus(detectionStatus).withOpacity(0.85),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(30),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.3),
+                                    width: 2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: _getColorForStatus(detectionStatus).withOpacity(0.6),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 5),
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      _getIconForStatus(detectionStatus),
+                                      color: Colors.white,
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      _getTextForStatus(detectionStatus),
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.white,
+                                        letterSpacing: 1.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                },
               ),
             ),
 
@@ -489,6 +559,7 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
 
   Widget _buildCameraPreview() {
     final cameraService = ref.read(cameraServiceProvider);
+    final session = ref.watch(drivingSessionProvider);
     
     if (cameraService.controller == null || !cameraService.isInitialized) {
       return Container(
@@ -504,15 +575,201 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
       );
     }
 
-    return SizedBox(
-      width: double.infinity,
-      height: double.infinity,
-      child: FittedBox(
-        fit: BoxFit.cover,
-        child: SizedBox(
-          width: cameraService.controller!.value.previewSize?.height ?? 100,
-          height: cameraService.controller!.value.previewSize?.width ?? 100,
-          child: CameraPreview(cameraService.controller!),
+    // Check if face is detected properly
+    final detectionStatus = session?.currentDetectionStatus;
+    final isFaceDetected = session?.currentStatusMessage != 'No face detected';
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // Camera Feed
+        SizedBox(
+          width: double.infinity,
+          height: double.infinity,
+          child: FittedBox(
+            fit: BoxFit.cover,
+            child: SizedBox(
+              width: cameraService.controller!.value.previewSize?.height ?? 100,
+              height: cameraService.controller!.value.previewSize?.width ?? 100,
+              child: CameraPreview(cameraService.controller!),
+            ),
+          ),
+        ),
+        
+        // Face Positioning Guide Overlay
+        if (!isFaceDetected)
+          _buildFacePositioningGuide(),
+        
+        // Face Detected Success Indicator (appears briefly when face is found)
+        if (isFaceDetected && detectionStatus == DetectionStatus.alert)
+          Positioned(
+            top: 20,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppTheme.neonGreen.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.neonGreen.withOpacity(0.4),
+                      blurRadius: 12,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.check_circle,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'FACE DETECTED',
+                      style: GoogleFonts.outfit(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildFacePositioningGuide() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: RadialGradient(
+          colors: [
+            Colors.black.withOpacity(0.3),
+            Colors.black.withOpacity(0.6),
+          ],
+          stops: const [0.6, 1.0],
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Corner Frame Guides
+          Positioned(
+            top: 30,
+            left: 30,
+            child: _buildCornerGuide(isTopLeft: true),
+          ),
+          Positioned(
+            top: 30,
+            right: 30,
+            child: _buildCornerGuide(isTopRight: true),
+          ),
+          Positioned(
+            bottom: 30,
+            left: 30,
+            child: _buildCornerGuide(isBottomLeft: true),
+          ),
+          Positioned(
+            bottom: 30,
+            right: 30,
+            child: _buildCornerGuide(isBottomRight: true),
+          ),
+          
+          // Center Face Oval Guide
+          Center(
+            child: Container(
+              width: 140,
+              height: 180,
+              decoration: BoxDecoration(
+                shape: BoxShape.rectangle,
+                borderRadius: BorderRadius.circular(100),
+                border: Border.all(
+                  color: AppTheme.neonAmber,
+                  width: 3,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.neonAmber.withOpacity(0.4),
+                    blurRadius: 20,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // Instruction Text
+          Positioned(
+            bottom: 15,
+            left: 0,
+            right: 0,
+            child: Column(
+              children: [
+                Icon(
+                  Icons.face_outlined,
+                  color: AppTheme.neonAmber,
+                  size: 32,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'POSITION YOUR FACE',
+                  style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    color: AppTheme.neonAmber,
+                    letterSpacing: 2.0,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Align face in center frame',
+                  style: GoogleFonts.outfit(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textSecondary,
+                    letterSpacing: 0.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCornerGuide({
+    bool isTopLeft = false,
+    bool isTopRight = false,
+    bool isBottomLeft = false,
+    bool isBottomRight = false,
+  }) {
+    return Container(
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(
+        border: Border(
+          top: (isTopLeft || isTopRight)
+              ? BorderSide(color: AppTheme.neonAmber, width: 3)
+              : BorderSide.none,
+          bottom: (isBottomLeft || isBottomRight)
+              ? BorderSide(color: AppTheme.neonAmber, width: 3)
+              : BorderSide.none,
+          left: (isTopLeft || isBottomLeft)
+              ? BorderSide(color: AppTheme.neonAmber, width: 3)
+              : BorderSide.none,
+          right: (isTopRight || isBottomRight)
+              ? BorderSide(color: AppTheme.neonAmber, width: 3)
+              : BorderSide.none,
         ),
       ),
     );
@@ -769,6 +1026,39 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
       _statusMessage = 'SYSTEM READY';
       _currentStatus = DetectionStatus.alert;
     });
+  }
+
+  Color _getColorForStatus(DetectionStatus status) {
+    switch (status) {
+      case DetectionStatus.alert:
+        return AppTheme.neonGreen;
+      case DetectionStatus.slight:
+        return AppTheme.neonAmber;
+      case DetectionStatus.drowsy:
+        return AppTheme.neonRed;
+    }
+  }
+
+  String _getTextForStatus(DetectionStatus status) {
+    switch (status) {
+      case DetectionStatus.alert:
+        return 'ALL SYSTEMS NORMAL';
+      case DetectionStatus.slight:
+        return 'FATIGUE WARNING';
+      case DetectionStatus.drowsy:
+        return 'DROWSINESS ALERT!';
+    }
+  }
+
+  IconData _getIconForStatus(DetectionStatus status) {
+    switch (status) {
+      case DetectionStatus.alert:
+        return Icons.check_circle;
+      case DetectionStatus.slight:
+        return Icons.warning_rounded;
+      case DetectionStatus.drowsy:
+        return Icons.error_rounded;
+    }
   }
 
   Color _getStatusColor() {
