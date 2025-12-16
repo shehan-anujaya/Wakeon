@@ -235,11 +235,10 @@ class DrivingScreen extends ConsumerStatefulWidget {
 
 class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProviderStateMixin {
   DetectionStatus _currentStatus = DetectionStatus.alert;
+  String _statusMessage = 'SYSTEM READY';
   bool _isDriving = false;
   late AnimationController _rippleController;
   late AnimationController _pulseController;
-  late AnimationController _scanController;
-  late AnimationController _gridController;
 
   @override
   void initState() {
@@ -253,24 +252,12 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
       vsync: this,
       duration: const Duration(milliseconds: 2000),
     )..repeat(reverse: true);
-    
-    _scanController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2500),
-    )..repeat();
-    
-    _gridController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
   }
 
   @override
   void dispose() {
     _rippleController.dispose();
     _pulseController.dispose();
-    _scanController.dispose();
-    _gridController.dispose();
     super.dispose();
   }
 
@@ -370,130 +357,135 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
 
             const SizedBox(height: 40),
 
-            // Main Dashboard Circle with Ripples
+            // Main Dashboard Circle with Ripples - using ClipRect with no clipping to allow ripples to overflow
             Expanded(
               child: Center(
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Animated Ripples (only when not driving)
-                    if (!_isDriving) ...[
-                      _buildRipple(0.0),
-                      _buildRipple(0.33),
-                      _buildRipple(0.66),
-                    ],
-                    
-                    // Outer Glow
-                    AnimatedBuilder(
-                      animation: _pulseController,
-                      builder: (context, child) {
-                        return Container(
-                          width: 280 + (_pulseController.value * 20),
-                          height: 280 + (_pulseController.value * 20),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: _getStatusColor().withOpacity(0.15 + (_pulseController.value * 0.1)),
-                                blurRadius: 80 + (_pulseController.value * 40),
-                                spreadRadius: 10,
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                    
-                    // Progress/Status Ring
-                    SizedBox(
-                      width: 290,
-                      height: 290,
-                      child: CircularProgressIndicator(
-                        value: 1.0,
-                        strokeWidth: 3,
-                        valueColor: AlwaysStoppedAnimation<Color>(_getStatusColor().withOpacity(0.4)),
+                child: SizedBox(
+                  width: 320,
+                  height: 320,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    alignment: Alignment.center,
+                    children: [
+                      // Animated Ripples (only when not driving)
+                      if (!_isDriving) ...[
+                        _buildRipple(0.0),
+                        _buildRipple(0.33),
+                        _buildRipple(0.66),
+                      ],
+                      
+                      // Outer Glow
+                      AnimatedBuilder(
+                        animation: _pulseController,
+                        builder: (context, child) {
+                          return Container(
+                            width: 280 + (_pulseController.value * 20),
+                            height: 280 + (_pulseController.value * 20),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _getStatusColor().withOpacity(0.15 + (_pulseController.value * 0.1)),
+                                  blurRadius: 80 + (_pulseController.value * 40),
+                                  spreadRadius: 10,
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
-                    ),
-                    
-                    // Inner Camera/Status Container
-                    Container(
-                      width: 250,
-                      height: 250,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            AppTheme.surfaceDark,
-                            AppTheme.backgroundBlack,
-                          ],
+                      
+                      // Progress/Status Ring
+                      SizedBox(
+                        width: 290,
+                        height: 290,
+                        child: CircularProgressIndicator(
+                          value: 1.0,
+                          strokeWidth: 3,
+                          valueColor: AlwaysStoppedAnimation<Color>(_getStatusColor().withOpacity(0.4)),
                         ),
-                        border: Border.all(
-                          color: _getStatusColor().withOpacity(0.6),
-                          width: 3,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.6),
-                            blurRadius: 40,
-                            offset: const Offset(0, 15),
-                          ),
-                        ],
                       ),
-                      child: ClipOval(
-                        child: _isDriving 
-                          ? _buildCameraPreview() 
-                          : _buildReadyState(),
-                      ),
-                    ),
-                    
-                    // Status Icon Badge
-                    Positioned(
-                      bottom: -10,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      
+                      // Inner Camera/Status Container
+                      Container(
+                        width: 250,
+                        height: 250,
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
                             colors: [
-                              AppTheme.surfaceLight,
                               AppTheme.surfaceDark,
+                              AppTheme.backgroundBlack,
                             ],
                           ),
-                          borderRadius: BorderRadius.circular(30),
                           border: Border.all(
-                            color: _getStatusColor().withOpacity(0.3),
-                            width: 1.5,
+                            color: _getStatusColor().withOpacity(0.6),
+                            width: 3,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.4),
-                              blurRadius: 15,
-                              offset: const Offset(0, 5),
+                              color: Colors.black.withOpacity(0.6),
+                              blurRadius: 40,
+                              offset: const Offset(0, 15),
                             ),
                           ],
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              _getStatusIcon(),
-                              color: _getStatusColor(),
-                              size: 20,
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              _getStatusText(),
-                              style: GoogleFonts.outfit(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w800,
-                                color: AppTheme.textPrimary,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
+                        child: ClipOval(
+                          child: _isDriving 
+                            ? _buildCameraPreview() 
+                            : _buildReadyState(),
                         ),
                       ),
-                    ),
-                  ],
+                      
+                      // Status Icon Badge
+                      Positioned(
+                        bottom: -10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                AppTheme.surfaceLight,
+                                AppTheme.surfaceDark,
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(
+                              color: _getStatusColor().withOpacity(0.3),
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.4),
+                                blurRadius: 15,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _getStatusIcon(),
+                                color: _getStatusColor(),
+                                size: 20,
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                _getStatusText(),
+                                style: GoogleFonts.outfit(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppTheme.textPrimary,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -548,282 +540,42 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
     
     if (cameraService.controller == null || !cameraService.isInitialized) {
       return Container(
-        color: Colors.black,
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.black,
+        ),
         child: const Center(
           child: CircularProgressIndicator(color: AppTheme.neonGreen),
         ),
       );
     }
 
-    // Calculate scale to fill the circular container
-    final size = 250.0;
-    final scale = size / MediaQuery.of(context).size.width.clamp(size, size * 2);
-
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // Camera Preview - scaled to fill the entire circular area
-        Positioned.fill(
-          child: FittedBox(
-            fit: BoxFit.cover,
-            child: SizedBox(
-              width: size,
-              height: size,
-              child: CameraPreview(cameraService.controller!),
-            ),
-          ),
+    return SizedBox(
+      width: double.infinity,
+      height: double.infinity,
+      child: FittedBox(
+        fit: BoxFit.cover,
+        child: SizedBox(
+          width: cameraService.controller!.value.previewSize?.height ?? 100,
+          height: cameraService.controller!.value.previewSize?.width ?? 100,
+          child: CameraPreview(cameraService.controller!),
         ),
-        
-        // Dark overlay for better visibility
-        Container(
-          decoration: BoxDecoration(
-            gradient: RadialGradient(
-              colors: [
-                Colors.transparent,
-                Colors.black.withOpacity(0.3),
-              ],
-              stops: const [0.5, 1.0],
-            ),
-          ),
-        ),
-        
-        // Scanning Grid Overlay
-        _buildScanningGrid(),
-        
-        // Corner Brackets (with proper clipping)
-        Padding(
-          padding: const EdgeInsets.all(15),
-          child: _buildCornerBrackets(),
-        ),
-        
-        // Horizontal Scanning Line
-        _buildScanLine(),
-        
-        // Detection Indicators
-        _buildDetectionIndicators(),
-        
-        // Face Detection Frame (placeholder - would normally use ML Kit data)
-        _buildFaceDetectionFrame(),
-      ],
-    );
-  }
-
-  Widget _buildScanningGrid() {
-    return AnimatedBuilder(
-      animation: _gridController,
-      builder: (context, child) {
-        return CustomPaint(
-          painter: GridPainter(
-            color: AppTheme.neonGreen.withOpacity(0.15 + (_gridController.value * 0.1)),
-          ),
-          child: Container(),
-        );
-      },
-    );
-  }
-
-  Widget _buildCornerBrackets() {
-    return CustomPaint(
-      painter: CornerBracketsPainter(
-        color: _getStatusColor(),
-        strokeWidth: 3,
       ),
-      child: Container(),
-    );
-  }
-
-  Widget _buildScanLine() {
-    return AnimatedBuilder(
-      animation: _scanController,
-      builder: (context, child) {
-        return Positioned(
-          top: _scanController.value * 250,
-          left: 0,
-          right: 0,
-          child: Container(
-            height: 2,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  _getStatusColor().withOpacity(0.8),
-                  _getStatusColor(),
-                  _getStatusColor().withOpacity(0.8),
-                  Colors.transparent,
-                ],
-                stops: const [0.0, 0.3, 0.5, 0.7, 1.0],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: _getStatusColor().withOpacity(0.6),
-                  blurRadius: 10,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildDetectionIndicators() {
-    return Positioned(
-      top: 15,
-      left: 15,
-      right: 15,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildIndicatorDot('EYE', _isDriving),
-          _buildIndicatorDot('FACE', _isDriving),
-          _buildIndicatorDot('ALERT', _currentStatus == DetectionStatus.alert),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildIndicatorDot(String label, bool active) {
-    return AnimatedBuilder(
-      animation: _pulseController,
-      builder: (context, child) {
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.6),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: active 
-                  ? AppTheme.neonGreen.withOpacity(0.6) 
-                  : AppTheme.textTertiary.withOpacity(0.3),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: active ? AppTheme.neonGreen : AppTheme.textTertiary,
-                  shape: BoxShape.circle,
-                  boxShadow: active ? [
-                    BoxShadow(
-                      color: AppTheme.neonGreen.withOpacity(_pulseController.value),
-                      blurRadius: 6,
-                      spreadRadius: 2,
-                    ),
-                  ] : null,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: GoogleFonts.outfit(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                  color: active ? AppTheme.neonGreen : AppTheme.textTertiary,
-                  letterSpacing: 1.0,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildFaceDetectionFrame() {
-    return Center(
-      child: AnimatedBuilder(
-        animation: _pulseController,
-        builder: (context, child) {
-          return Container(
-            width: 140,
-            height: 180,
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: _getStatusColor().withOpacity(0.4 + (_pulseController.value * 0.2)),
-                width: 2,
-              ),
-              borderRadius: BorderRadius.circular(80),
-            ),
-            child: Stack(
-              children: [
-                // Eye tracking indicators
-                Positioned(
-                  top: 50,
-                  left: 30,
-                  child: _buildEyeIndicator(),
-                ),
-                Positioned(
-                  top: 50,
-                  right: 30,
-                  child: _buildEyeIndicator(),
-                ),
-                // Status text at bottom
-                Positioned(
-                  bottom: 10,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        'TRACKING',
-                        style: GoogleFonts.outfit(
-                          fontSize: 8,
-                          fontWeight: FontWeight.w800,
-                          color: _getStatusColor(),
-                          letterSpacing: 1.5,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildEyeIndicator() {
-    return AnimatedBuilder(
-      animation: _pulseController,
-      builder: (context, child) {
-        return Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: _getStatusColor(),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: _getStatusColor().withOpacity(_pulseController.value * 0.8),
-                blurRadius: 8,
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 
   Widget _buildReadyState() {
     return Container(
-      decoration: BoxDecoration(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
         gradient: RadialGradient(
           colors: [
-            const Color(0xFF1A1A1D),
-            const Color(0xFF0D0D0F),
+            Color(0xFF1A1A1D),
+            Color(0xFF0D0D0F),
           ],
         ),
       ),
@@ -1062,9 +814,14 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
   void _startDriving() async {
     setState(() {
       _isDriving = true;
+      _statusMessage = 'INITIALIZING...';
     });
 
     await ref.read(drivingSessionProvider.notifier).startSession();
+    
+    setState(() {
+      _statusMessage = 'ACTIVE';
+    });
   }
 
   void _stopDriving() async {
@@ -1072,6 +829,7 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
     
     setState(() {
       _isDriving = false;
+      _statusMessage = 'SYSTEM READY';
       _currentStatus = DetectionStatus.alert;
     });
   }
@@ -1107,88 +865,5 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
       case DetectionStatus.drowsy:
         return Icons.warning_outlined;
     }
-  }
-}
-
-// Custom Painter for Corner Brackets
-class CornerBracketsPainter extends CustomPainter {
-  final Color color;
-  final double strokeWidth;
-
-  CornerBracketsPainter({
-    required this.color,
-    this.strokeWidth = 3,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = strokeWidth
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    const bracketLength = 30.0;
-    
-    // Top-left corner
-    canvas.drawLine(const Offset(0, 0), const Offset(bracketLength, 0), paint);
-    canvas.drawLine(const Offset(0, 0), const Offset(0, bracketLength), paint);
-    
-    // Top-right corner
-    canvas.drawLine(Offset(size.width, 0), Offset(size.width - bracketLength, 0), paint);
-    canvas.drawLine(Offset(size.width, 0), Offset(size.width, bracketLength), paint);
-    
-    // Bottom-left corner
-    canvas.drawLine(Offset(0, size.height), Offset(bracketLength, size.height), paint);
-    canvas.drawLine(Offset(0, size.height), Offset(0, size.height - bracketLength), paint);
-    
-    // Bottom-right corner
-    canvas.drawLine(Offset(size.width, size.height), Offset(size.width - bracketLength, size.height), paint);
-    canvas.drawLine(Offset(size.width, size.height), Offset(size.width, size.height - bracketLength), paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CornerBracketsPainter oldDelegate) {
-    return oldDelegate.color != color || oldDelegate.strokeWidth != strokeWidth;
-  }
-}
-
-// Custom Painter for Scanning Grid
-class GridPainter extends CustomPainter {
-  final Color color;
-
-  GridPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 0.5
-      ..style = PaintingStyle.stroke;
-
-    const gridSize = 25.0;
-    
-    // Draw vertical lines
-    for (double x = 0; x <= size.width; x += gridSize) {
-      canvas.drawLine(
-        Offset(x, 0),
-        Offset(x, size.height),
-        paint,
-      );
-    }
-    
-    // Draw horizontal lines
-    for (double y = 0; y <= size.height; y += gridSize) {
-      canvas.drawLine(
-        Offset(0, y),
-        Offset(size.width, y),
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant GridPainter oldDelegate) {
-    return oldDelegate.color != color;
   }
 }
