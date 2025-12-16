@@ -1,0 +1,5 @@
+android {
+    if (project.android.hasProperty("namespace")) {
+        namespace = "com.telefonica.flutter_sms"
+    }
+}
