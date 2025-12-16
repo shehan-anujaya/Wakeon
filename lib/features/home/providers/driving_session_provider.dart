@@ -8,7 +8,6 @@ import '../../../core/services/camera_service.dart';
 import '../../../core/services/drowsiness_detection_service.dart';
 import '../../../core/services/alert_service.dart';
 import '../../../core/services/location_service.dart';
-import '../../../core/services/emergency_service.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../../emergency_contacts/providers/emergency_contacts_provider.dart';
 
@@ -110,10 +109,10 @@ class DrivingSessionNotifier extends StateNotifier<DrivingSession?> {
       eventIds: [...state!.eventIds, event.id],
     );
 
-    // Trigger alert
+    // Trigger alert with more urgent message
     await alertService.triggerAlert(
       settings: settings,
-      message: 'Wake up! You are showing signs of drowsiness.',
+      message: 'Wake up! Wake up! Stay alert! You are getting drowsy!',
     );
 
     // Start escalation timer

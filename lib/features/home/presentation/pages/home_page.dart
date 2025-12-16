@@ -436,54 +436,6 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
                             : _buildReadyState(),
                         ),
                       ),
-                      
-                      // Status Icon Badge
-                      Positioned(
-                        bottom: -10,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                AppTheme.surfaceLight,
-                                AppTheme.surfaceDark,
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(30),
-                            border: Border.all(
-                              color: _getStatusColor().withOpacity(0.3),
-                              width: 1.5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.4),
-                                blurRadius: 15,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                _getStatusIcon(),
-                                color: _getStatusColor(),
-                                size: 20,
-                              ),
-                              const SizedBox(width: 10),
-                              Text(
-                                _getStatusText(),
-                                style: GoogleFonts.outfit(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppTheme.textPrimary,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -582,70 +534,55 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen> with TickerProvid
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Animated Eye Icon
-          AnimatedBuilder(
-            animation: _pulseController,
-            builder: (context, child) {
-              return Transform.scale(
-                scale: 1.0 + (_pulseController.value * 0.1),
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppTheme.textTertiary.withOpacity(0.1),
-                    border: Border.all(
-                      color: AppTheme.textTertiary.withOpacity(0.2),
-                      width: 2,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.remove_red_eye_outlined,
-                    size: 60,
-                    color: AppTheme.textTertiary.withOpacity(0.4),
-                  ),
+          // Static Professional Icon
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppTheme.textTertiary.withOpacity(0.15),
+                  AppTheme.textTertiary.withOpacity(0.05),
+                ],
+              ),
+              border: Border.all(
+                color: AppTheme.textTertiary.withOpacity(0.25),
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
                 ),
-              );
-            },
+              ],
+            ),
+            child: Icon(
+              Icons.visibility_off_outlined,
+              size: 56,
+              color: AppTheme.textTertiary.withOpacity(0.5),
+            ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
           Text(
             'MONITORING',
             style: GoogleFonts.outfit(
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w900,
-              color: AppTheme.textTertiary.withOpacity(0.6),
-              letterSpacing: 3.0,
+              color: AppTheme.textTertiary.withOpacity(0.5),
+              letterSpacing: 3.5,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
             'INACTIVE',
             style: GoogleFonts.outfit(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
               color: AppTheme.textTertiary,
               letterSpacing: 2.5,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppTheme.textTertiary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: AppTheme.textTertiary.withOpacity(0.2),
-                width: 1,
-              ),
-            ),
-            child: Text(
-              'READY TO START',
-              style: GoogleFonts.outfit(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.textTertiary.withOpacity(0.7),
-                letterSpacing: 1.5,
-              ),
             ),
           ),
         ],

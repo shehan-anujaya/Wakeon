@@ -130,17 +130,6 @@ class DrowsinessDetectionService {
 
       final inputImageFormat = InputImageFormat.yuv420;
 
-      final planeData = image.planes.map(
-        (Plane plane) {
-          return InputImageMetadata(
-            size: Size(image.width.toDouble(), image.height.toDouble()),
-            rotation: imageRotation,
-            format: inputImageFormat,
-            bytesPerRow: plane.bytesPerRow,
-          );
-        },
-      ).toList();
-
       final inputImageData = InputImageMetadata(
         size: Size(image.width.toDouble(), image.height.toDouble()),
         rotation: imageRotation,

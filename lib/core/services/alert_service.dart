@@ -49,9 +49,9 @@ class AlertService {
   Future<void> _playAlarmSound(double volume) async {
     try {
       await _audioPlayer.setVolume(volume);
-      // In production, use: await _audioPlayer.play(AssetSource('sounds/alarm.mp3'));
-      // For now, we'll use a system sound or beep
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
+      // Play alarm sound from assets
+      await _audioPlayer.play(AssetSource('sounds/alarm.mp3'));
     } catch (e) {
       debugPrint('Error playing alarm: $e');
     }
@@ -59,8 +59,8 @@ class AlertService {
 
   Future<void> _vibrate(bool isEmergency) async {
     try {
-      final hasVibrator = await Vibration.hasVibrator() ?? false;
-      if (!hasVibrator) return;
+      final hasVibrator = await Vibration.hasVibrator();
+      if (hasVibrator == null || !hasVibrator) return;
 
       if (isEmergency) {
         // Strong vibration pattern for emergency
