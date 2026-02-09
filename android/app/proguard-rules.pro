@@ -8,6 +8,26 @@
 -keep class com.google.firebase.** { *; }
 -keep class io.flutter.embedding.** { *; }
 
+# Flutter animations and ticker - Critical for ripple animations
+-keep class io.flutter.animation.** { *; }
+-keep class io.flutter.scheduler.** { *; }
+-keepclassmembers class * {
+    *** *Controller*;
+    *** *Animation*;
+    *** *Ticker*;
+}
+
+# Preserve all widget state and lifecycle methods
+-keepclassmembers class * extends androidx.lifecycle.ViewModel {
+    <init>();
+}
+-keepclassmembers class * {
+    *** initState();
+    *** dispose();
+    *** didUpdateWidget(...);
+    *** build(...);
+}
+
 # Play Core (optional feature, suppress warnings)
 -dontwarn com.google.android.play.core.**
 -keep class com.google.android.play.core.** { *; }
@@ -30,6 +50,39 @@
 -keep class com.google.mlkit.vision.** { *; }
 -keep class com.google.mlkit.vision.face.** { *; }
 -keep interface com.google.mlkit.vision.face.** { *; }
+
+# Keep face detection features - head pose, eye tracking, classification
+-keep class com.google.mlkit.vision.face.Face { *; }
+-keep class com.google.mlkit.vision.face.FaceDetector { *; }
+-keep class com.google.mlkit.vision.face.FaceDetectorOptions { *; }
+-keep class com.google.mlkit.vision.face.FaceLandmark { *; }
+-keep class com.google.mlkit.vision.face.FaceContour { *; }
+-keepclassmembers class com.google.mlkit.vision.face.Face {
+    public <methods>;
+    public <fields>;
+}
+
+# Keep methods for head pose (Euler angles)
+-keepclassmembers class com.google.mlkit.vision.face.Face {
+    public java.lang.Float getHeadEulerAngleX();
+    public java.lang.Float getHeadEulerAngleY();
+    public java.lang.Float getHeadEulerAngleZ();
+}
+
+# Keep methods for eye tracking
+-keepclassmembers class com.google.mlkit.vision.face.Face {
+    public java.lang.Float getLeftEyeOpenProbability();
+    public java.lang.Float getRightEyeOpenProbability();
+    public java.lang.Float getSmilingProbability();
+}
+
+# Keep bounding box and tracking
+-keepclassmembers class com.google.mlkit.vision.face.Face {
+    public android.graphics.Rect getBoundingBox();
+    public java.lang.Integer getTrackingId();
+    public java.util.List getLandmarks();
+    public java.util.List getContours();
+}
 
 # Camera - Critical for image stream
 -keep class androidx.camera.** { *; }
