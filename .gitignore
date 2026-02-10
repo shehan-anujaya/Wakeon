@@ -49,6 +49,9 @@ app.*.map.json
 *.g.dart
 *.freezed.dart
 
+# Documentation
+/docs/
+
 # Key files (never commit!)
 /android/key.properties
 *.jks

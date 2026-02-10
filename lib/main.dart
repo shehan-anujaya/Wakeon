@@ -5,13 +5,34 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
+import 'core/models/emergency_contact.dart';
+import 'core/models/user_model.dart';
+import 'core/models/driving_session.dart';
+import 'core/models/drowsiness_event.dart';
+import 'core/adapters/duration_adapter.dart';
 import 'features/onboarding/data/datasources/local_datasource.dart';
+import 'features/auth/data/auth_repository.dart';
+import 'features/auth/providers/auth_provider.dart';
+import 'features/auth/presentation/pages/login_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Initialize Hive for local storage
   await Hive.initFlutter();
+  
+  // Register all Hive type adapters
+  // Duration adapter must be registered first since it's used by other types
+  Hive.registerAdapter(DurationAdapter());
+  Hive.registerAdapter(EmergencyContactAdapter());
+  Hive.registerAdapter(UserModelAdapter());
+  Hive.registerAdapter(DrivingSessionAdapter());
+  Hive.registerAdapter(DrowsinessEventAdapter());
+  Hive.registerAdapter(DrowsinessLevelAdapterAdapter());
+
+  // Initialize auth repository
+  final authRepository = AuthRepository();
+  await authRepository.initialize();
   
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
@@ -33,8 +54,11 @@ void main() async {
   );
 
   runApp(
-    const ProviderScope(
-      child: WakeonApp(),
+    ProviderScope(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(authRepository),
+      ],
+      child: const WakeonApp(),
     ),
   );
 }
@@ -44,6 +68,7 @@ class WakeonApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
     final hasSeenOnboarding = ref.watch(hasSeenOnboardingProvider);
 
     return MaterialApp(
@@ -52,11 +77,27 @@ class WakeonApp extends ConsumerWidget {
       theme: AppTheme.darkTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.dark,
-      home: hasSeenOnboarding.when(
-        data: (seen) => AppRouter.getInitialRoute(seen),
-        loading: () => const SplashScreen(),
-        error: (_, __) => AppRouter.getInitialRoute(false),
-      ),
+      home: _buildHome(authState, hasSeenOnboarding),
+    );
+  }
+
+  Widget _buildHome(AuthState authState, AsyncValue<bool> hasSeenOnboarding) {
+    // Show splash while loading
+    if (authState.status == AuthStatus.initial ||
+        authState.status == AuthStatus.loading) {
+      return const SplashScreen();
+    }
+
+    // Require authentication
+    if (authState.status != AuthStatus.authenticated) {
+      return const LoginPage();
+    }
+
+    // User is authenticated - check onboarding
+    return hasSeenOnboarding.when(
+      data: (seen) => AppRouter.getInitialRoute(seen),
+      loading: () => const SplashScreen(),
+      error: (_, __) => AppRouter.getInitialRoute(false),
     );
   }
 }

@@ -7,9 +7,9 @@ import '../../providers/driving_session_provider.dart';
 import '../../../emergency_contacts/presentation/pages/emergency_contacts_page.dart';
 import '../../../analytics/presentation/pages/analytics_page.dart';
 import '../../../settings/presentation/pages/settings_page.dart';
-import '../../../settings/providers/settings_provider.dart';
 import '../../../../core/services/drowsiness_detection_service.dart';
 import '../../../../core/theme/app_theme.dart';
+import 'image_analysis_page.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -237,8 +237,8 @@ class DrivingScreen extends ConsumerStatefulWidget {
 
 class _DrivingScreenState extends ConsumerState<DrivingScreen> 
     with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+  // ignore: unused_field
   DetectionStatus _currentStatus = DetectionStatus.alert;
-  String _statusMessage = 'SYSTEM READY';
   bool _isDriving = false;
   late AnimationController _rippleController;
   late AnimationController _pulseController;
@@ -274,8 +274,8 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen>
     final session = ref.watch(drivingSessionProvider);
     
     // Use session's detection status if available
+    // ignore: unused_local_variable
     final detectionStatus = session?.currentDetectionStatus ?? DetectionStatus.alert;
-    final statusMessage = session?.currentStatusMessage ?? 'SYSTEM READY';
 
     return Container(
       decoration: const BoxDecoration(
@@ -338,188 +338,78 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen>
                       ),
                     ],
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppTheme.surfaceLight,
-                          AppTheme.surfaceDark,
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppTheme.borderColor.withOpacity(0.5)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.battery_full, size: 18, color: AppTheme.neonGreen),
-                        const SizedBox(width: 6),
-                        Text(
-                          '100%',
-                          style: GoogleFonts.outfit(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.textPrimary,
+                  Row(
+                    children: [
+                      // Image Analysis Button
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ImageAnalysisPage(),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                AppTheme.neonBlue.withOpacity(0.2),
+                                AppTheme.surfaceDark,
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppTheme.neonBlue.withOpacity(0.5)),
+                          ),
+                          child: Icon(
+                            Icons.photo_camera_outlined,
+                            size: 18,
+                            color: AppTheme.neonBlue,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppTheme.surfaceLight,
+                              AppTheme.surfaceDark,
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppTheme.borderColor.withOpacity(0.5)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.battery_full, size: 18, color: AppTheme.neonGreen),
+                            const SizedBox(width: 6),
+                            Text(
+                              '100%',
+                              style: GoogleFonts.outfit(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 20),
 
-            // Main Dashboard Circle with Ripples
+            // Main View - Different layouts for driving vs standby
             Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return Center(
-                    child: SizedBox(
-                      width: 320,
-                      height: 320,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        alignment: Alignment.center,
-                        children: [
-                          // Animated Ripples (only when not driving)
-                          if (!_isDriving) ...[
-                            _buildRipple(0.0),
-                            _buildRipple(0.33),
-                            _buildRipple(0.66),
-                          ],
-                          
-                          // Outer Glow
-                          AnimatedBuilder(
-                            animation: _pulseController,
-                            builder: (context, child) {
-                              final statusColor = _getColorForStatus(detectionStatus);
-                              return Container(
-                                width: 280 + (_pulseController.value * 20),
-                                height: 280 + (_pulseController.value * 20),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: statusColor.withOpacity(0.15 + (_pulseController.value * 0.1)),
-                                      blurRadius: 80 + (_pulseController.value * 40),
-                                      spreadRadius: 10,
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                          
-                          // Progress/Status Ring
-                          const SizedBox(
-                            width: 290,
-                            height: 290,
-                            child: SizedBox.shrink(),
-                          ),
-                          
-                          // Animated Ring
-                          SizedBox(
-                            width: 290,
-                            height: 290,
-                            child: CircularProgressIndicator(
-                              value: 1.0,
-                              strokeWidth: 3,
-                              valueColor: AlwaysStoppedAnimation<Color>(_getColorForStatus(detectionStatus).withOpacity(0.4)),
-                            ),
-                          ),
-                          
-                          // Inner Camera/Status Container - Fixed position
-                          Positioned(
-                            top: 35,
-                            left: 35,
-                            child: Container(
-                              width: 250,
-                              height: 250,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: const RadialGradient(
-                                  colors: [
-                                    AppTheme.surfaceDark,
-                                    AppTheme.backgroundBlack,
-                                  ],
-                                ),
-                                border: Border.all(
-                                  color: _getColorForStatus(detectionStatus).withOpacity(0.6),
-                                  width: 3,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.6),
-                                    blurRadius: 40,
-                                    offset: const Offset(0, 15),
-                                  ),
-                                ],
-                              ),
-                              child: ClipOval(
-                                child: _isDriving 
-                                  ? _buildCameraPreview() 
-                                  : _buildReadyState(),
-                              ),
-                            ),
-                          ),
-                          
-                          // Warning Status Overlay (only when drowsy or slight)
-                          if (_isDriving && detectionStatus != DetectionStatus.alert)
-                            Positioned(
-                              bottom: 25,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      _getColorForStatus(detectionStatus).withOpacity(0.95),
-                                      _getColorForStatus(detectionStatus).withOpacity(0.85),
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(30),
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.3),
-                                    width: 2,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: _getColorForStatus(detectionStatus).withOpacity(0.6),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 5),
-                                      spreadRadius: 2,
-                                    ),
-                                  ],
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      _getIconForStatus(detectionStatus),
-                                      color: Colors.white,
-                                      size: 22,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      _getTextForStatus(detectionStatus),
-                                      style: GoogleFonts.outfit(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w900,
-                                        color: Colors.white,
-                                        letterSpacing: 1.5,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+              child: _isDriving 
+                ? _buildProfessionalCameraView(session, detectionStatus)
+                : _buildStandbyView(detectionStatus),
             ),
 
             const SizedBox(height: 20),
@@ -537,52 +427,6 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen>
             const SizedBox(height: 140),
           ],
         ),
-        
-        // DEBUG: Test buttons overlay (only show when driving)
-        if (_isDriving && session != null)
-          Positioned(
-            left: 16,
-            bottom: 160,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildDebugButton(
-                  'Test Audio',
-                  Icons.volume_up,
-                  Colors.blue,
-                  () async {
-                    final alertService = ref.read(alertServiceProvider);
-                    final settings = ref.read(settingsProvider);
-                    await alertService.triggerAlert(
-                      settings: settings,
-                      message: 'Testing audio alert system',
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-                _buildDebugButton(
-                  'Test Drowsy',
-                  Icons.bedtime,
-                  AppTheme.neonRed,
-                  () => ref.read(drivingSessionProvider.notifier).debugTriggerDrowsiness(),
-                ),
-                const SizedBox(height: 8),
-                _buildDebugButton(
-                  'Test Fatigue',
-                  Icons.visibility_off,
-                  AppTheme.neonAmber,
-                  () => ref.read(drivingSessionProvider.notifier).debugTriggerFatigue(),
-                ),
-                const SizedBox(height: 8),
-                _buildDebugButton(
-                  'Reset',
-                  Icons.refresh,
-                  AppTheme.neonGreen,
-                  () => ref.read(drivingSessionProvider.notifier).debugResetState(),
-                ),
-              ],
-            ),
-          ),
       ],
     ),
       ),
@@ -615,86 +459,308 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen>
     );
   }
 
-  Widget _buildCameraPreview() {
+  /// Professional full-screen camera monitoring view
+  Widget _buildProfessionalCameraView(dynamic session, DetectionStatus detectionStatus) {
     final cameraService = ref.read(cameraServiceProvider);
-    final session = ref.watch(drivingSessionProvider);
-    
-    if (cameraService.controller == null || !cameraService.isInitialized) {
-      return Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.black,
-        ),
-        child: const Center(
-          child: CircularProgressIndicator(color: AppTheme.neonGreen),
-        ),
-      );
-    }
-
-    // Check if face is detected properly
-    final detectionStatus = session?.currentDetectionStatus;
-    final isFaceDetected = session?.currentStatusMessage != 'No face detected';
     final isFaceLockedIn = session?.faceLockedIn == true;
-
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // Camera Feed
-        SizedBox(
-          width: double.infinity,
-          height: double.infinity,
-          child: FittedBox(
-            fit: BoxFit.cover,
-            child: SizedBox(
-              width: cameraService.controller!.value.previewSize?.height ?? 100,
-              height: cameraService.controller!.value.previewSize?.width ?? 100,
-              child: CameraPreview(cameraService.controller!),
-            ),
-          ),
-        ),
-        
-        // Face Positioning Guide Overlay (only show when not locked in)
-        if (!isFaceLockedIn)
-          _buildFacePositioningGuide(),
-        
-        // Face Locked In Success Indicator
-        if (isFaceLockedIn)
-          Positioned(
-            top: 20,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppTheme.neonGreen.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.neonGreen.withOpacity(0.4),
-                      blurRadius: 12,
-                      spreadRadius: 1,
-                    ),
-                  ],
+    final statusColor = _getColorForStatus(detectionStatus);
+    
+    // Calculate session duration
+    final duration = session != null 
+        ? DateTime.now().difference(session.startTime)
+        : Duration.zero;
+    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        children: [
+          // Main Camera Container
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: statusColor.withOpacity(0.4),
+                  width: 2,
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                boxShadow: [
+                  BoxShadow(
+                    color: statusColor.withOpacity(0.15),
+                    blurRadius: 30,
+                    spreadRadius: 5,
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.5),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(26),
+                child: Stack(
+                  fit: StackFit.expand,
                   children: [
-                    const Icon(
-                      Icons.check_circle,
-                      color: Colors.white,
-                      size: 18,
+                    // Camera Feed
+                    if (cameraService.controller != null && cameraService.isInitialized)
+                      FittedBox(
+                        fit: BoxFit.cover,
+                        child: SizedBox(
+                          width: cameraService.controller!.value.previewSize?.height ?? 100,
+                          height: cameraService.controller!.value.previewSize?.width ?? 100,
+                          child: CameraPreview(cameraService.controller!),
+                        ),
+                      )
+                    else
+                      Container(
+                        color: AppTheme.backgroundBlack,
+                        child: const Center(
+                          child: CircularProgressIndicator(color: AppTheme.neonGreen),
+                        ),
+                      ),
+                    
+                    // Gradient overlays for depth
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withOpacity(0.4),
+                            Colors.transparent,
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.6),
+                          ],
+                          stops: const [0.0, 0.15, 0.85, 1.0],
+                        ),
+                      ),
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'FACE LOCKED IN',
-                      style: GoogleFonts.outfit(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        letterSpacing: 1.5,
+                    
+                    // Corner brackets
+                    _buildCameraCorners(statusColor),
+                    
+                    // Top HUD - Status & Timer
+                    Positioned(
+                      top: 16,
+                      left: 16,
+                      right: 16,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Recording indicator
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.6),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: AppTheme.neonRed.withOpacity(0.5),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                AnimatedBuilder(
+                                  animation: _pulseController,
+                                  builder: (context, child) {
+                                    return Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.neonRed.withOpacity(0.5 + (_pulseController.value * 0.5)),
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: AppTheme.neonRed.withOpacity(0.6),
+                                            blurRadius: 6,
+                                            spreadRadius: 1,
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'REC',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          
+                          // Session timer
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.6),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.timer_outlined,
+                                  size: 14,
+                                  color: AppTheme.textSecondary,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '$minutes:$seconds',
+                                  style: GoogleFonts.orbitron(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    // Center crosshair (subtle)
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: statusColor.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Center(
+                          child: Container(
+                            width: 4,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: statusColor.withOpacity(0.6),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    
+                    // Bottom status bar
+                    Positioned(
+                      bottom: 16,
+                      left: 16,
+                      right: 16,
+                      child: Row(
+                        children: [
+                          // Face detection status
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.7),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isFaceLockedIn 
+                                      ? AppTheme.neonGreen.withOpacity(0.4)
+                                      : AppTheme.textTertiary.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: (isFaceLockedIn ? AppTheme.neonGreen : AppTheme.textTertiary).withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      isFaceLockedIn ? Icons.face_retouching_natural : Icons.face_outlined,
+                                      size: 18,
+                                      color: isFaceLockedIn ? AppTheme.neonGreen : AppTheme.textTertiary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        isFaceLockedIn ? 'FACE LOCKED' : 'SCANNING',
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: isFaceLockedIn ? AppTheme.neonGreen : AppTheme.textTertiary,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                      Text(
+                                        isFaceLockedIn ? 'Tracking active' : 'Looking for face...',
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 9,
+                                          color: AppTheme.textSecondary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          
+                          const SizedBox(width: 10),
+                          
+                          // Detection status indicator
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  statusColor.withOpacity(0.2),
+                                  statusColor.withOpacity(0.1),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: statusColor.withOpacity(0.5),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _getIconForStatus(detectionStatus),
+                                  size: 20,
+                                  color: statusColor,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  detectionStatus == DetectionStatus.alert 
+                                      ? 'ALERT'
+                                      : detectionStatus == DetectionStatus.slight
+                                          ? 'WARNING'
+                                          : 'DANGER',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: statusColor,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -702,133 +768,207 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen>
               ),
             ),
           ),
-      ],
-    );
-  }
-
-  Widget _buildFacePositioningGuide() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: RadialGradient(
-          colors: [
-            Colors.black.withOpacity(0.3),
-            Colors.black.withOpacity(0.6),
-          ],
-          stops: const [0.6, 1.0],
-        ),
-      ),
-      child: Stack(
-        children: [
-          // Corner Frame Guides
-          Positioned(
-            top: 30,
-            left: 30,
-            child: _buildCornerGuide(isTopLeft: true),
-          ),
-          Positioned(
-            top: 30,
-            right: 30,
-            child: _buildCornerGuide(isTopRight: true),
-          ),
-          Positioned(
-            bottom: 30,
-            left: 30,
-            child: _buildCornerGuide(isBottomLeft: true),
-          ),
-          Positioned(
-            bottom: 30,
-            right: 30,
-            child: _buildCornerGuide(isBottomRight: true),
-          ),
           
-          // Center Face Oval Guide
-          Center(
-            child: Container(
-              width: 140,
-              height: 180,
-              decoration: BoxDecoration(
-                shape: BoxShape.rectangle,
-                borderRadius: BorderRadius.circular(100),
-                border: Border.all(
-                  color: Colors.blue,
-                  width: 3,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.blue.withOpacity(0.5),
-                    blurRadius: 20,
-                    spreadRadius: 2,
-                  ),
-                ],
+          const SizedBox(height: 16),
+          
+          // Quick Stats Row
+          Row(
+            children: [
+              _buildQuickStat(
+                icon: Icons.visibility,
+                label: 'Eyes',
+                value: isFaceLockedIn ? 'Open' : '--',
+                color: AppTheme.neonGreen,
               ),
-            ),
-          ),
-          
-          // Instruction Text
-          Positioned(
-            bottom: 15,
-            left: 0,
-            right: 0,
-            child: Column(
-              children: [
-                Icon(
-                  Icons.face_outlined,
-                  color: Colors.blue,
-                  size: 32,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'POSITION YOUR FACE',
-                  style: GoogleFonts.outfit(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.blue,
-                    letterSpacing: 2.0,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Align face in center frame',
-                  style: GoogleFonts.outfit(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textSecondary,
-                    letterSpacing: 0.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+              const SizedBox(width: 12),
+              _buildQuickStat(
+                icon: Icons.notifications_active_outlined,
+                label: 'Alerts',
+                value: '${session?.drowsinessEventsCount ?? 0}',
+                color: AppTheme.neonAmber,
+              ),
+              const SizedBox(width: 12),
+              _buildQuickStat(
+                icon: Icons.speed,
+                label: 'Status',
+                value: detectionStatus == DetectionStatus.alert ? 'Good' : 'Check',
+                color: statusColor,
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCornerGuide({
-    bool isTopLeft = false,
-    bool isTopRight = false,
-    bool isBottomLeft = false,
-    bool isBottomRight = false,
+  Widget _buildCameraCorners(Color color) {
+    return Stack(
+      children: [
+        Positioned(
+          top: 12,
+          left: 12,
+          child: _buildCornerBracket(color, topLeft: true),
+        ),
+        Positioned(
+          top: 12,
+          right: 12,
+          child: _buildCornerBracket(color, topRight: true),
+        ),
+        Positioned(
+          bottom: 12,
+          left: 12,
+          child: _buildCornerBracket(color, bottomLeft: true),
+        ),
+        Positioned(
+          bottom: 12,
+          right: 12,
+          child: _buildCornerBracket(color, bottomRight: true),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuickStat({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
   }) {
-    return Container(
-      width: 30,
-      height: 30,
-      decoration: BoxDecoration(
-        border: Border(
-          top: (isTopLeft || isTopRight)
-              ? BorderSide(color: Colors.blue, width: 3)
-              : BorderSide.none,
-          bottom: (isBottomLeft || isBottomRight)
-              ? BorderSide(color: Colors.blue, width: 3)
-              : BorderSide.none,
-          left: (isTopLeft || isBottomLeft)
-              ? BorderSide(color: Colors.blue, width: 3)
-              : BorderSide.none,
-          right: (isTopRight || isBottomRight)
-              ? BorderSide(color: Colors.blue, width: 3)
-              : BorderSide.none,
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceDark,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppTheme.borderColor.withOpacity(0.5),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 16, color: color),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    value,
+                    style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    label,
+                    style: GoogleFonts.outfit(
+                      fontSize: 9,
+                      color: AppTheme.textTertiary,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Standby view with animated circle
+  Widget _buildStandbyView(DetectionStatus detectionStatus) {
+    return Center(
+      child: SizedBox(
+        width: 320,
+        height: 320,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            // Animated Ripples
+            _buildRipple(0.0),
+            _buildRipple(0.33),
+            _buildRipple(0.66),
+            
+            // Outer Glow
+            AnimatedBuilder(
+              animation: _pulseController,
+              builder: (context, child) {
+                return Container(
+                  width: 280 + (_pulseController.value * 20),
+                  height: 280 + (_pulseController.value * 20),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.textTertiary.withOpacity(0.1 + (_pulseController.value * 0.05)),
+                        blurRadius: 60 + (_pulseController.value * 20),
+                        spreadRadius: 5,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            
+            // Inner Container
+            Container(
+              width: 250,
+              height: 250,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const RadialGradient(
+                  colors: [
+                    AppTheme.surfaceDark,
+                    AppTheme.backgroundBlack,
+                  ],
+                ),
+                border: Border.all(
+                  color: AppTheme.textTertiary.withOpacity(0.3),
+                  width: 2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.5),
+                    blurRadius: 30,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: _buildReadyState(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCornerBracket(Color color, {
+    bool topLeft = false,
+    bool topRight = false,
+    bool bottomLeft = false,
+    bool bottomRight = false,
+  }) {
+    return SizedBox(
+      width: 24,
+      height: 24,
+      child: CustomPaint(
+        painter: _CornerBracketPainter(
+          color: color,
+          topLeft: topLeft,
+          topRight: topRight,
+          bottomLeft: bottomLeft,
+          bottomRight: bottomRight,
         ),
       ),
     );
@@ -955,111 +1095,57 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen>
   }
 
   Widget _buildSessionInfo(session) {
-    final duration = DateTime.now().difference(session.startTime);
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    
+    // Stats are now shown in the camera view, just show stop button
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        children: [
-          // Stats Cards
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppTheme.surfaceLight.withOpacity(0.5),
-                  AppTheme.surfaceDark.withOpacity(0.5),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: AppTheme.borderColor.withOpacity(0.5),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatItem('DURATION', hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m', Icons.timer_outlined),
-                Container(
-                  width: 1,
-                  height: 40,
-                  color: AppTheme.borderColor,
-                ),
-                _buildStatItem('ALERTS', '${session.drowsinessEventsCount}', Icons.notifications_active_outlined),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: GestureDetector(
+        onTap: _stopDriving,
+        child: Container(
+          height: 56,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppTheme.neonRed.withOpacity(0.15),
+                AppTheme.surfaceDark,
               ],
             ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: AppTheme.neonRed.withOpacity(0.5),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.neonRed.withOpacity(0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 5),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          
-          // Stop Button
-          GestureDetector(
-            onTap: _stopDriving,
-            child: Container(
-              height: 56,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppTheme.surfaceLight,
-                    AppTheme.surfaceDark,
-                  ],
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.neonRed.withOpacity(0.2),
+                  shape: BoxShape.circle,
                 ),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: AppTheme.neonRed.withOpacity(0.6),
-                  width: 2,
+                child: const Icon(Icons.stop_rounded, color: AppTheme.neonRed, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'STOP MONITORING',
+                style: GoogleFonts.outfit(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.neonRed,
+                  letterSpacing: 1.5,
                 ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.stop_circle_outlined, color: AppTheme.neonRed, size: 24),
-                  const SizedBox(width: 12),
-                  Text(
-                    'STOP MONITORING',
-                    style: GoogleFonts.outfit(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.neonRed,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String label, String value, IconData icon) {
-    return Expanded(
-      child: Column(
-        children: [
-          Icon(icon, color: AppTheme.neonGreen, size: 28),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: GoogleFonts.outfit(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              color: AppTheme.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: GoogleFonts.outfit(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textTertiary,
-              letterSpacing: 1.0,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -1067,14 +1153,9 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen>
   void _startDriving() async {
     setState(() {
       _isDriving = true;
-      _statusMessage = 'INITIALIZING...';
     });
 
     await ref.read(drivingSessionProvider.notifier).startSession();
-    
-    setState(() {
-      _statusMessage = 'ACTIVE';
-    });
   }
 
   void _stopDriving() async {
@@ -1082,7 +1163,6 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen>
     
     setState(() {
       _isDriving = false;
-      _statusMessage = 'SYSTEM READY';
       _currentStatus = DetectionStatus.alert;
     });
   }
@@ -1098,17 +1178,6 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen>
     }
   }
 
-  String _getTextForStatus(DetectionStatus status) {
-    switch (status) {
-      case DetectionStatus.alert:
-        return 'ALL SYSTEMS NORMAL';
-      case DetectionStatus.slight:
-        return 'FATIGUE WARNING';
-      case DetectionStatus.drowsy:
-        return 'DROWSINESS ALERT!';
-    }
-  }
-
   IconData _getIconForStatus(DetectionStatus status) {
     switch (status) {
       case DetectionStatus.alert:
@@ -1119,74 +1188,58 @@ class _DrivingScreenState extends ConsumerState<DrivingScreen>
         return Icons.error_rounded;
     }
   }
+}
 
-  Color _getStatusColor() {
-    switch (_currentStatus) {
-      case DetectionStatus.alert:
-        return AppTheme.neonGreen;
-      case DetectionStatus.slight:
-        return AppTheme.neonAmber;
-      case DetectionStatus.drowsy:
-        return AppTheme.neonRed;
+/// Custom painter for minimal corner brackets
+class _CornerBracketPainter extends CustomPainter {
+  final Color color;
+  final bool topLeft;
+  final bool topRight;
+  final bool bottomLeft;
+  final bool bottomRight;
+
+  _CornerBracketPainter({
+    required this.color,
+    this.topLeft = false,
+    this.topRight = false,
+    this.bottomLeft = false,
+    this.bottomRight = false,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final path = Path();
+    const length = 12.0;
+
+    if (topLeft) {
+      path.moveTo(0, length);
+      path.lineTo(0, 0);
+      path.lineTo(length, 0);
+    } else if (topRight) {
+      path.moveTo(size.width - length, 0);
+      path.lineTo(size.width, 0);
+      path.lineTo(size.width, length);
+    } else if (bottomLeft) {
+      path.moveTo(0, size.height - length);
+      path.lineTo(0, size.height);
+      path.lineTo(length, size.height);
+    } else if (bottomRight) {
+      path.moveTo(size.width - length, size.height);
+      path.lineTo(size.width, size.height);
+      path.lineTo(size.width, size.height - length);
     }
+
+    canvas.drawPath(path, paint);
   }
 
-  String _getStatusText() {
-    switch (_currentStatus) {
-      case DetectionStatus.alert:
-        return 'ALL SYSTEMS NORMAL';
-      case DetectionStatus.slight:
-        return 'FATIGUE DETECTED';
-      case DetectionStatus.drowsy:
-        return 'CRITICAL ALERT';
-    }
-  }
-
-  IconData _getStatusIcon() {
-    switch (_currentStatus) {
-      case DetectionStatus.alert:
-        return Icons.check_circle_outline;
-      case DetectionStatus.slight:
-        return Icons.remove_red_eye_outlined;
-      case DetectionStatus.drowsy:
-        return Icons.warning_outlined;
-    }
-  }
-
-  Widget _buildDebugButton(String label, IconData icon, Color color, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color, width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.3),
-              blurRadius: 8,
-              spreadRadius: 1,
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: color),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: GoogleFonts.outfit(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: color,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  @override
+  bool shouldRepaint(covariant _CornerBracketPainter oldDelegate) {
+    return color != oldDelegate.color;
   }
 }

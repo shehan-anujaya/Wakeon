@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../providers/settings_provider.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../auth/providers/auth_provider.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -210,6 +211,24 @@ class SettingsPage extends ConsumerWidget {
               ),
             ),
 
+            // Account
+            SliverToBoxAdapter(
+              child: _buildSection(
+                context,
+                title: 'ACCOUNT',
+                children: [
+                  _buildAuthInfo(context, ref),
+                  _buildTileSetting(
+                    context,
+                    icon: Icons.logout_rounded,
+                    label: 'Sign Out',
+                    iconColor: AppTheme.neonRed,
+                    onTap: () => _confirmLogout(context, ref),
+                  ),
+                ],
+              ),
+            ),
+
             const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
           ],
         ),
@@ -381,6 +400,7 @@ class SettingsPage extends ConsumerWidget {
     required IconData icon,
     required String label,
     Widget? trailing,
+    Color? iconColor,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -390,7 +410,7 @@ class SettingsPage extends ConsumerWidget {
         padding: const EdgeInsets.all(20),
         child: Row(
           children: [
-            Icon(icon, color: AppTheme.textSecondary, size: 24),
+            Icon(icon, color: iconColor ?? AppTheme.textSecondary, size: 24),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
@@ -445,6 +465,116 @@ class SettingsPage extends ConsumerWidget {
                 color: AppTheme.neonGreen,
                 fontWeight: FontWeight.bold,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAuthInfo(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    final user = authState.user;
+
+    if (user == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: AppTheme.neonGreen.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                user.displayName.isNotEmpty ? user.displayName[0].toUpperCase() : '?',
+                style: GoogleFonts.outfit(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.neonGreen,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  user.displayName,
+                  style: GoogleFonts.outfit(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                Text(
+                  user.email,
+                  style: GoogleFonts.outfit(
+                    fontSize: 13,
+                    color: AppTheme.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmLogout(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surfaceDark,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: const BorderSide(color: AppTheme.borderColor),
+        ),
+        title: Text(
+          'Sign Out',
+          style: GoogleFonts.outfit(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to sign out?',
+          style: GoogleFonts.outfit(
+            color: AppTheme.textSecondary,
+            fontSize: 16,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'CANCEL',
+              style: GoogleFonts.outfit(
+                color: AppTheme.textTertiary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              ref.read(authProvider.notifier).logout();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.neonRed,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(
+              'SIGN OUT',
+              style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
             ),
           ),
         ],

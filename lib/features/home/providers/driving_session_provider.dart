@@ -10,6 +10,7 @@ import '../../../core/services/alert_service.dart';
 import '../../../core/services/location_service.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../../emergency_contacts/providers/emergency_contacts_provider.dart';
+import '../../analytics/data/session_history_repository.dart';
 
 final cameraServiceProvider = Provider<CameraService>((ref) {
   return CameraService();
@@ -57,10 +58,16 @@ class DrivingSessionNotifier extends StateNotifier<DrivingSession?> {
     if (state == null) return;
 
     final duration = DateTime.now().difference(state!.startTime);
-    state = state!.copyWith(
+    final completedSession = state!.copyWith(
       endTime: DateTime.now(),
       duration: duration,
     );
+    
+    state = completedSession;
+
+    // Save the completed session to history
+    final sessionHistoryRepo = SessionHistoryRepository();
+    await sessionHistoryRepo.saveSession(completedSession);
 
     // Stop camera
     final cameraService = _ref.read(cameraServiceProvider);
@@ -68,6 +75,9 @@ class DrivingSessionNotifier extends StateNotifier<DrivingSession?> {
 
     // Cancel any pending alerts
     _alertEscalationTimer?.cancel();
+    
+    // Reset state after saving
+    state = null;
   }
 
   Future<void> _processImage(CameraImage image) async {
@@ -139,7 +149,7 @@ class DrivingSessionNotifier extends StateNotifier<DrivingSession?> {
   Future<void> _escalateToEmergency(DrowsinessEvent event) async {
     final emergencyService = _ref.read(emergencyServiceProvider);
     final locationService = _ref.read(locationServiceProvider);
-    final contacts = _ref.read(emergencyContactsProvider);
+    final contacts = _ref.read(emergencyContactsProvider).valueOrNull ?? [];
     final settings = _ref.read(settingsProvider);
 
     if (contacts.isEmpty) return;

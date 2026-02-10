@@ -70,7 +70,7 @@ class AlertService {
   Future<void> _vibrate(bool isEmergency) async {
     try {
       final hasVibrator = await Vibration.hasVibrator();
-      if (hasVibrator == null || !hasVibrator) {
+      if (hasVibrator != true) {
         debugPrint('⚠ No vibrator available');
         return;
       }

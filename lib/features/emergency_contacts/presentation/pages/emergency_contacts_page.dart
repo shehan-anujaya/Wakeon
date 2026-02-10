@@ -1,24 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:uuid/uuid.dart';
 import '../../providers/emergency_contacts_provider.dart';
 import '../../../../core/models/emergency_contact.dart';
 import '../../../../core/theme/app_theme.dart';
+import 'contact_form_page.dart';
+import 'contact_detail_page.dart';
 
 class EmergencyContactsPage extends ConsumerWidget {
   const EmergencyContactsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final contacts = ref.watch(emergencyContactsProvider);
+    final contactsAsync = ref.watch(emergencyContactsProvider);
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundBlack,
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 120.0),
         child: FloatingActionButton.extended(
-          onPressed: () => _showAddContactDialog(context, ref),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ContactFormPage()),
+            );
+          },
           backgroundColor: AppTheme.neonGreen,
           foregroundColor: AppTheme.backgroundBlack,
           icon: const Icon(Icons.person_add_rounded),
@@ -79,28 +85,43 @@ class EmergencyContactsPage extends ConsumerWidget {
               ),
             ),
 
-            contacts.isEmpty
-                ? SliverFillRemaining(
-                    child: _buildEmptyState(context),
-                  )
-                : SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 8,
-                          ),
-                          child: _buildContactCard(
-                            context,
-                            ref,
-                            contacts[index],
-                          ),
-                        );
-                      },
-                      childCount: contacts.length,
-                    ),
+            contactsAsync.when(
+              loading: () => const SliverFillRemaining(
+                child: Center(
+                  child: CircularProgressIndicator(color: AppTheme.neonGreen),
+                ),
+              ),
+              error: (e, _) => SliverFillRemaining(
+                child: Center(
+                  child: Text(
+                    'Error loading contacts',
+                    style: GoogleFonts.outfit(color: AppTheme.neonRed),
                   ),
+                ),
+              ),
+              data: (contacts) => contacts.isEmpty
+                  ? SliverFillRemaining(
+                      child: _buildEmptyState(context),
+                    )
+                  : SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 8,
+                            ),
+                            child: _buildContactCard(
+                              context,
+                              ref,
+                              contacts[index],
+                            ),
+                          );
+                        },
+                        childCount: contacts.length,
+                      ),
+                    ),
+            ),
 
             const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
           ],
@@ -158,35 +179,44 @@ class EmergencyContactsPage extends ConsumerWidget {
     WidgetRef ref,
     EmergencyContact contact,
   ) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceDark,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: AppTheme.borderColor,
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ContactDetailPage(contactId: contact.id),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: AppTheme.neonGreen.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceDark,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: AppTheme.borderColor,
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppTheme.neonGreen.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
                 child: Center(
                   child: Text(
                     contact.name.isNotEmpty ? contact.name[0].toUpperCase() : '?',
@@ -276,6 +306,7 @@ class EmergencyContactsPage extends ConsumerWidget {
           ),
         ],
       ),
+      ),
     );
   }
 
@@ -315,122 +346,6 @@ class EmergencyContactsPage extends ConsumerWidget {
                 fontSize: 13,
                 fontWeight: value ? FontWeight.bold : FontWeight.w500,
                 color: value ? AppTheme.textPrimary : AppTheme.textTertiary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showAddContactDialog(BuildContext context, WidgetRef ref) {
-    final nameController = TextEditingController();
-    final phoneController = TextEditingController();
-    bool enableSms = true;
-    bool enableCall = false;
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          backgroundColor: AppTheme.surfaceDark,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-            side: const BorderSide(color: AppTheme.borderColor),
-          ),
-          title: Text(
-            'New Contact',
-            style: GoogleFonts.outfit(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimary,
-            ),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  style: GoogleFonts.outfit(color: AppTheme.textPrimary),
-                  decoration: InputDecoration(
-                    labelText: 'Name',
-                    prefixIcon: const Icon(Icons.person_outline_rounded),
-                    labelStyle: GoogleFonts.outfit(color: AppTheme.textTertiary),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: phoneController,
-                  keyboardType: TextInputType.phone,
-                  style: GoogleFonts.outfit(color: AppTheme.textPrimary),
-                  decoration: InputDecoration(
-                    labelText: 'Phone Number',
-                    prefixIcon: const Icon(Icons.phone_outlined),
-                    labelStyle: GoogleFonts.outfit(color: AppTheme.textTertiary),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                SwitchListTile(
-                  title: Text(
-                    'Auto SMS',
-                    style: GoogleFonts.outfit(color: AppTheme.textPrimary),
-                  ),
-                  value: enableSms,
-                  onChanged: (value) => setState(() => enableSms = value),
-                  activeColor: AppTheme.neonGreen,
-                  activeTrackColor: AppTheme.neonGreen.withOpacity(0.3),
-                  inactiveThumbColor: AppTheme.textTertiary,
-                ),
-                SwitchListTile(
-                  title: Text(
-                    'Auto Call',
-                    style: GoogleFonts.outfit(color: AppTheme.textPrimary),
-                  ),
-                  value: enableCall,
-                  onChanged: (value) => setState(() => enableCall = value),
-                  activeColor: AppTheme.neonGreen,
-                  activeTrackColor: AppTheme.neonGreen.withOpacity(0.3),
-                  inactiveThumbColor: AppTheme.textTertiary,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                'CANCEL',
-                style: GoogleFonts.outfit(
-                  color: AppTheme.textTertiary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (nameController.text.isNotEmpty &&
-                    phoneController.text.isNotEmpty) {
-                  final contact = ref
-                      .read(emergencyContactsProvider.notifier)
-                      .createNewContact(
-                        name: nameController.text,
-                        phoneNumber: phoneController.text,
-                        enableAutoCall: enableCall,
-                        enableAutoSms: enableSms,
-                      );
-                  
-                  ref.read(emergencyContactsProvider.notifier).addContact(contact);
-                  Navigator.pop(context);
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.neonGreen,
-                foregroundColor: AppTheme.backgroundBlack,
-              ),
-              child: Text(
-                'ADD',
-                style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
               ),
             ),
           ],

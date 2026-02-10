@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
-import 'dart:typed_data';
 import '../models/drowsiness_event.dart';
 
 enum DetectionStatus {
